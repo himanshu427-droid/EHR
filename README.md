@@ -70,6 +70,15 @@ Run the complete stack using Docker Compose:
 git clone <your-repo-url>
 cd medichain-ehr
 
+# Create .env file with required secrets
+cp .env.example .env
+
+# Generate a strong JWT secret
+openssl rand -base64 32
+
+# Add the generated secret to .env file:
+# JWT_SECRET=<your-generated-secret>
+
 # Build and start all services
 docker-compose up -d
 
@@ -265,15 +274,20 @@ peer lifecycle chaincode querycommitted \
 
 ### Step 3: Configure Backend to Use Fabric
 
-1. **Update backend environment variables:**
+1. **Generate and configure secrets:**
 
-Create a `.env` file in your project root:
+```bash
+# Generate a strong JWT secret
+openssl rand -base64 32
+```
+
+2. **Create `.env` file in your project root:**
 
 ```env
 NODE_ENV=development
 PORT=5000
 MONGODB_URI=mongodb://localhost:27017/ehr_db
-JWT_SECRET=your-secret-key-change-in-production
+JWT_SECRET=<your-generated-secret-from-above>
 USE_FABRIC=true
 FABRIC_NETWORK_PATH=./server/fabric/network-config.yaml
 FABRIC_CHANNEL_NAME=ehrchannel
@@ -389,12 +403,31 @@ cd ~/fabric-samples/test-network
 
 ## 🔐 Security
 
-- JWT tokens with 7-day expiration
-- Bcrypt password hashing (10 rounds)
-- File upload size limits (10MB)
-- CORS configuration
-- Blockchain-based audit logging
-- Permission-based access control
+- **JWT tokens** with 7-day expiration
+- **Bcrypt password hashing** (10 rounds)
+- **File upload size limits** (10MB)
+- **CORS configuration**
+- **Blockchain-based audit logging**
+- **Permission-based access control**
+
+### Security Setup
+
+**IMPORTANT:** Before deploying, you MUST:
+
+1. **Generate a strong JWT secret:**
+   ```bash
+   openssl rand -base64 32
+   ```
+
+2. **Set the JWT_SECRET environment variable:**
+   - **Docker:** Add to `.env` file before running `docker-compose up`
+   - **Replit:** Add to Secrets tab with key `JWT_SECRET`
+   - **Manual:** Export in your shell: `export JWT_SECRET="your-secret"`
+
+3. **Never commit secrets to version control**
+   - The `.env` file is git-ignored
+   - Use environment variables for all secrets
+   - Rotate secrets regularly in production
 
 ## 🤝 Contributing
 

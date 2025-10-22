@@ -1,7 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required. Please set it in your .env file or Replit Secrets.');
+}
 
 export interface AuthRequest extends Request {
   user?: {

@@ -28,7 +28,7 @@ services:
       NODE_ENV: development
       PORT: 5000
       MONGODB_URI: mongodb://admin:password123@mongodb:27017/ehr_db?authSource=admin
-      JWT_SECRET: your-secret-key-change-in-production-12345
+      JWT_SECRET: ${JWT_SECRET}
       FABRIC_NETWORK_PATH: /app/server/fabric/network-config.yaml
     ports:
       - "5000:5000"

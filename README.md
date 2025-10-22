@@ -316,7 +316,7 @@ const ccp = JSON.parse(readFileSync(ccpPath, 'utf8'));
 ### Step 4: Start the Application
 
 1. **Start MongoDB:**
-
+(Either Use your active MONGO_URI)
 ```bash
 docker run -d -p 27017:27017 --name ehr-mongodb \
   -e MONGO_INITDB_ROOT_USERNAME=admin \
@@ -328,7 +328,7 @@ docker run -d -p 27017:27017 --name ehr-mongodb \
 
 ```bash
 npm install
-npm run dev
+npm run dev:backend
 ```
 
 3. **Start the frontend (separate terminal):**
@@ -337,6 +337,10 @@ npm run dev
 cd client
 npm run build
 npx serve -s dist -p 3000
+```
+or 
+```
+npm run dev:frontend
 ```
 
 **Access:**

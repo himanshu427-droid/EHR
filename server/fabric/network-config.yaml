@@ -1,0 +1,65 @@
+---
+name: "ehr-network"
+version: "1.0"
+
+# Channels configuration
+channels:
+  ehrchannel:
+    orderers:
+      - orderer.example.com
+    peers:
+      peer0.org1.example.com:
+        endorsingPeer: true
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: true
+      peer0.org2.example.com:
+        endorsingPeer: true
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: true
+
+# Organizations configuration
+organizations:
+  Org1:
+    mspid: Org1MSP
+    peers:
+      - peer0.org1.example.com
+    certificateAuthorities:
+      - ca.org1.example.com
+  
+  Org2:
+    mspid: Org2MSP
+    peers:
+      - peer0.org2.example.com
+    certificateAuthorities:
+      - ca.org2.example.com
+
+# Orderers configuration
+orderers:
+  orderer.example.com:
+    url: grpc://localhost:7050
+    grpcOptions:
+      ssl-target-name-override: orderer.example.com
+
+# Peers configuration
+peers:
+  peer0.org1.example.com:
+    url: grpc://localhost:7051
+    grpcOptions:
+      ssl-target-name-override: peer0.org1.example.com
+  
+  peer0.org2.example.com:
+    url: grpc://localhost:9051
+    grpcOptions:
+      ssl-target-name-override: peer0.org2.example.com
+
+# Certificate Authorities configuration
+certificateAuthorities:
+  ca.org1.example.com:
+    url: http://localhost:7054
+    caName: ca-org1
+  
+  ca.org2.example.com:
+    url: http://localhost:8054
+    caName: ca-org2

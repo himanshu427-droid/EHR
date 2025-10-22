@@ -1,0 +1,124 @@
+Description:
+Build a complete MERN + Hyperledger Fabric web application for decentralized Electronic Health Record (EHR) management.
+The system should allow patients, doctors, labs, hospitals, insurers, and researchers to securely access and manage medical data using a permissioned blockchain network.
+
+🌐 Tech Stack
+
+Frontend: React + TailwindCSS + Axios + React Router
+
+Backend: Node.js + Express.js + MongoDB + Hyperledger Fabric Node SDK
+
+Blockchain Layer: Hyperledger Fabric network (fabric-samples) for storing immutable hashes and access logs
+
+Storage: MongoDB for metadata, IPFS for report files
+
+Authentication: JWT-based login for each role
+
+Deployment: Docker-compose setup for frontend, backend, and blockchain peer nodes
+
+🧩 Roles & Permissions
+
+Patient:
+
+Register / login
+
+View and share health records
+
+Give/revoke consent to doctors or insurers
+
+Doctor:
+
+Create and update prescriptions
+
+View patient records (with consent)
+
+Lab / Diagnostics:
+
+Upload lab reports (linked to patient ID)
+
+Hospital Admin:
+
+Manage doctors and patients
+
+Verify data integrity on blockchain
+
+Insurance Company:
+
+Verify claims using blockchain transaction history
+
+Researcher:
+
+Access anonymized medical datasets for analytics
+
+🔗 Features to Implement
+
+Authentication System (JWT) for all roles
+
+IPFS Integration for uploading lab reports securely
+
+Blockchain Logging: Every record create/update/delete should generate a transaction stored in Hyperledger Fabric
+
+Smart Contract (Chaincode):
+
+addRecord(patientID, recordHash, doctorID)
+
+getRecordHistory(patientID)
+
+grantAccess(patientID, entityID)
+
+revokeAccess(patientID, entityID)
+
+MongoDB Schemas: User, Record, Prescription, InsuranceClaim
+
+REST APIs:
+
+/api/auth/register, /api/auth/login
+
+/api/records/add, /api/records/get/:patientId
+
+/api/prescriptions/create
+
+/api/insurance/approve
+
+/api/lab/uploadReport
+
+Frontend Pages:
+
+Login/Register for each role
+
+Dashboard (role-based)
+
+Record Upload / View pages
+
+Blockchain verification page (shows Fabric transaction history)
+
+Insurance approval interface
+
+⚙️ Integration Notes
+
+Use fabric-samples to configure a minimal network with 1 orderer, 2 orgs, and 2 peers.
+
+Use the Hyperledger Fabric Node SDK in backend for blockchain calls.
+
+Store uploaded medical files in IPFS, and keep only the hash in MongoDB + Fabric.
+
+Include .env for sensitive keys (DB_URI, JWT_SECRET, FABRIC_CFG_PATH, etc.)
+
+📁 Folder Structure
+/frontend
+  ├── src/
+  │   ├── pages/ (Login, Dashboard, Records, Insurance, Lab)
+  │   ├── components/
+  │   └── utils/
+/backend
+  ├── models/
+  ├── routes/
+  ├── controllers/
+  ├── config/
+  └── fabric/
+      ├── networkConnection.yaml
+      └── invoke.js
+/chaincode
+  ├── ehr_contract.js
+/docker-compose.yml
+/README.md

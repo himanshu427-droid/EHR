@@ -78,7 +78,7 @@ This allows full testing without infrastructure setup — all blockchain operati
 
 ```bash
 # Clone the repository
-git clone <your-repo-url>
+git clone https://github.com/himanshu427-droid/EHR.git
 cd medichain-ehr
 
 # Create .env file

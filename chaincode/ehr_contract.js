@@ -199,3 +199,5 @@ class EHRContract extends Contract {
 }
 
 module.exports = EHRContract;
+
+

@@ -138,139 +138,16 @@ You should see containers for:
 - `ca_org1` and `ca_org2`
 
 ### Step 2: Deploy the Chaincode
-
-1. **Copy chaincode to fabric-samples:**
-
+Go to fabric-samples/test-network, then run:
 ```bash
-# From your project directory
-cp -r chaincode ~/fabric-samples/test-network/chaincode/ehr
+./network.sh deployCC -c ehrchannel \
+                      -ccn ehr \
+                      -ccv 1 \
+                      -ccs 1 \
+                      -ccp "Your_project_root/chaincode" \
+                      -ccl javascript
 ```
 
-2. **Package the chaincode:**
-
-```bash
-cd ~/fabric-samples/test-network
-export PATH=${PWD}/../bin:$PATH
-export FABRIC_CFG_PATH=$PWD/../config/
-
-peer lifecycle chaincode package ehr.tar.gz \
-  --path ../chaincode/ehr \
-  --lang node \
-  --label ehr_1.0
-```
-
-3. **Install chaincode on Org1 peer:**
-
-```bash
-export CORE_PEER_TLS_ENABLED=true
-export CORE_PEER_LOCALMSPID="Org1MSP"
-export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
-export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
-export CORE_PEER_ADDRESS=localhost:7051
-
-peer lifecycle chaincode install ehr.tar.gz
-```
-
-4. **Install chaincode on Org2 peer:**
-
-```bash
-export CORE_PEER_LOCALMSPID="Org2MSP"
-export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
-export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp
-export CORE_PEER_ADDRESS=localhost:9051
-
-peer lifecycle chaincode install ehr.tar.gz
-```
-
-5. **Query installed chaincode to get package ID:**
-
-```bash
-peer lifecycle chaincode queryinstalled
-```
-
-Copy the Package ID (format: `ehr_1.0:hash`)
-
-6. **Approve chaincode for Org1:**
-
-```bash
-export CC_PACKAGE_ID=<your-package-id>
-
-export CORE_PEER_LOCALMSPID="Org1MSP"
-export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
-export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
-export CORE_PEER_ADDRESS=localhost:7051
-
-peer lifecycle chaincode approveformyorg \
-  -o localhost:7050 \
-  --ordererTLSHostnameOverride orderer.example.com \
-  --channelID ehrchannel \
-  --name ehr \
-  --version 1.0 \
-  --package-id $CC_PACKAGE_ID \
-  --sequence 1 \
-  --tls \
-  --cafile ${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
-```
-
-7. **Approve chaincode for Org2:**
-
-```bash
-export CORE_PEER_LOCALMSPID="Org2MSP"
-export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp
-export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
-export CORE_PEER_ADDRESS=localhost:9051
-
-peer lifecycle chaincode approveformyorg \
-  -o localhost:7050 \
-  --ordererTLSHostnameOverride orderer.example.com \
-  --channelID ehrchannel \
-  --name ehr \
-  --version 1.0 \
-  --package-id $CC_PACKAGE_ID \
-  --sequence 1 \
-  --tls \
-  --cafile ${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
-```
-
-8. **Check commit readiness:**
-
-```bash
-peer lifecycle chaincode checkcommitreadiness \
-  --channelID ehrchannel \
-  --name ehr \
-  --version 1.0 \
-  --sequence 1 \
-  --tls \
-  --cafile ${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem \
-  --output json
-```
-
-9. **Commit the chaincode:**
-
-```bash
-peer lifecycle chaincode commit \
-  -o localhost:7050 \
-  --ordererTLSHostnameOverride orderer.example.com \
-  --channelID ehrchannel \
-  --name ehr \
-  --version 1.0 \
-  --sequence 1 \
-  --tls \
-  --cafile ${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem \
-  --peerAddresses localhost:7051 \
-  --tlsRootCertFiles ${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt \
-  --peerAddresses localhost:9051 \
-  --tlsRootCertFiles ${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
-```
-
-10. **Verify chaincode is committed:**
-
-```bash
-peer lifecycle chaincode querycommitted \
-  --channelID ehrchannel \
-  --name ehr \
-  --cafile ${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
-```
 
 ### Step 3: Configure Backend to Use Fabric
 

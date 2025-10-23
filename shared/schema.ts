@@ -1,123 +1,23 @@
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, jsonb, boolean } from "drizzle-orm/pg-core";
+// root/shared/schema.ts
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+// Import the table definitions from your new server file
+import {
+  users,
+  records,
+  prescriptions,
+  labReports,
+  insuranceClaims,
+  accessControl,
+  blockchainAudit,
+  UserRole, // Also import the UserRole enum
+} from "../server/db/schema"; // <-- Adjust path if needed
 
-// User roles enum
-export const UserRole = {
-  PATIENT: "patient",
-  DOCTOR: "doctor",
-  LAB: "lab",
-  HOSPITAL_ADMIN: "hospital_admin",
-  INSURANCE: "insurance",
-  RESEARCHER: "researcher",
-} as const;
+// === EXPORT THE ENUM ===
+export { UserRole };
+export type { UserRoleType } from "../server/db/schema"; // <-- Adjust path
 
-export type UserRoleType = typeof UserRole[keyof typeof UserRole];
-
-// Users table
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  email: text("email").notNull().unique(),
-  password: text("password").notNull(),
-  role: text("role").notNull(), // patient, doctor, lab, hospital_admin, insurance, researcher
-  fullName: text("full_name").notNull(),
-  specialty: text("specialty"), // for doctors
-  organization: text("organization"), // for labs, hospitals, insurance, researchers
-  licenseNumber: text("license_number"), // for doctors, labs
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-// Health Records table
-export const records = pgTable("records", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  patientId: varchar("patient_id").notNull(),
-  doctorId: varchar("doctor_id"),
-  recordType: text("record_type").notNull(), // diagnosis, prescription, lab_report, vaccination, etc
-  title: text("title").notNull(),
-  description: text("description"),
-  fileHash: text("file_hash"), // hash of uploaded file
-  filePath: text("file_path"), // local path to file
-  fileName: text("file_name"),
-  blockchainTxId: text("blockchain_tx_id"), // Fabric transaction ID
-  status: text("status").notNull().default("active"), // active, archived
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-// Prescriptions table
-export const prescriptions = pgTable("prescriptions", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  patientId: varchar("patient_id").notNull(),
-  doctorId: varchar("doctor_id").notNull(),
-  medications: jsonb("medications").notNull(), // array of {name, dosage, frequency, duration}
-  diagnosis: text("diagnosis").notNull(),
-  notes: text("notes"),
-  blockchainTxId: text("blockchain_tx_id"),
-  status: text("status").notNull().default("active"), // active, fulfilled, cancelled
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-// Lab Reports table
-export const labReports = pgTable("lab_reports", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  patientId: varchar("patient_id").notNull(),
-  labId: varchar("lab_id").notNull(),
-  testType: text("test_type").notNull(),
-  results: jsonb("results"), // structured test results
-  fileHash: text("file_hash"),
-  filePath: text("file_path"),
-  fileName: text("file_name"),
-  blockchainTxId: text("blockchain_tx_id"),
-  status: text("status").notNull().default("pending"), // pending, completed, verified
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-// Insurance Claims table
-export const insuranceClaims = pgTable("insurance_claims", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  patientId: varchar("patient_id").notNull(),
-  insuranceId: varchar("insurance_id").notNull(),
-  recordIds: jsonb("record_ids").notNull(), // array of related record IDs
-  claimAmount: text("claim_amount").notNull(),
-  diagnosis: text("diagnosis").notNull(),
-  treatment: text("treatment").notNull(),
-  blockchainTxId: text("blockchain_tx_id"),
-  status: text("status").notNull().default("pending"), // pending, approved, rejected
-  reviewNotes: text("review_notes"),
-  reviewedAt: timestamp("reviewed_at"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-// Consent/Access Control table
-export const accessControl = pgTable("access_control", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  patientId: varchar("patient_id").notNull(),
-  entityId: varchar("entity_id").notNull(), // doctor, insurance, researcher ID
-  entityType: text("entity_type").notNull(), // doctor, insurance, researcher
-  permissions: jsonb("permissions").notNull(), // array of permissions: view_records, view_prescriptions, etc
-  blockchainTxId: text("blockchain_tx_id"),
-  status: text("status").notNull().default("active"), // active, revoked
-  grantedAt: timestamp("granted_at").defaultNow().notNull(),
-  revokedAt: timestamp("revoked_at"),
-});
-
-// Blockchain Audit Log table
-export const blockchainAudit = pgTable("blockchain_audit", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  txId: text("tx_id").notNull().unique(),
-  operation: text("operation").notNull(), // addRecord, grantAccess, revokeAccess, etc
-  entityId: varchar("entity_id").notNull(), // user or record ID
-  entityType: text("entity_type").notNull(), // user, record, prescription, etc
-  dataHash: text("data_hash").notNull(),
-  metadata: jsonb("metadata"),
-  timestamp: timestamp("timestamp").defaultNow().notNull(),
-});
-
-// Insert schemas
+// === INSERT SCHEMAS (for Zod) ===
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -156,7 +56,7 @@ export const insertBlockchainAuditSchema = createInsertSchema(blockchainAudit).o
   timestamp: true,
 });
 
-// Types
+// === TYPES (Inferred from tables) ===
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -178,7 +78,7 @@ export type AccessControl = typeof accessControl.$inferSelect;
 export type InsertBlockchainAudit = z.infer<typeof insertBlockchainAuditSchema>;
 export type BlockchainAudit = typeof blockchainAudit.$inferSelect;
 
-// Additional validation schemas for API endpoints
+// === API VALIDATION SCHEMAS ===
 export const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
   password: z.string().min(1, "Password is required"),

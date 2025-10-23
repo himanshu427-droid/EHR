@@ -180,25 +180,32 @@ function hashData(data: any): string {
 
 /**
  * Wrapper for the 'addRecord' chaincode function.
+ * Chaincode expects: (recordId, patientId, recordHash, doctorId, metadata)
  */
 async function addRecord(patientId: string, dataHash: string, doctorId: string | null): Promise<string> {
   const doctorIdStr = doctorId || ''; // Pass empty string if null/undefined
-  return submitTransaction('addRecord', patientId, dataHash, doctorIdStr);
+  const recordId = crypto.randomUUID(); // generate a unique record id for ledger key
+  const metadataStr = JSON.stringify({ createdBy: doctorIdStr || 'system', createdAt: new Date().toISOString() });
+  return submitTransaction('addRecord', recordId, patientId, dataHash, doctorIdStr, metadataStr);
 }
 
 /**
  * Wrapper for the 'grantAccess' chaincode function.
+ * Chaincode expects: (accessId, patientId, entityId, permissions)
  */
 async function grantAccess(patientId: string, entityId: string, permissions: string[]): Promise<string> {
-  const permissionsStr = JSON.stringify(permissions); // Pass array as a string
-  return submitTransaction('grantAccess', patientId, entityId, permissionsStr);
+  const permissionsStr = JSON.stringify(permissions);
+  const accessId = crypto.randomUUID();
+  return submitTransaction('grantAccess', accessId, patientId, entityId, permissionsStr);
 }
 
 /**
  * Wrapper for the 'revokeAccess' chaincode function.
+ * Chaincode expects: (accessId)
+ * We'll accept (patientId, entityId) in caller code but here we require accessId.
  */
-async function revokeAccess(patientId: string, entityId: string): Promise<string> {
-  return submitTransaction('revokeAccess', patientId, entityId);
+async function revokeAccess(accessId: string): Promise<string> {
+  return submitTransaction('revokeAccess', accessId);
 }
 
 // --- Exported Service Object ---

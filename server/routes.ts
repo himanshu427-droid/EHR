@@ -461,6 +461,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+    app.get('/api/auth/me', authenticateToken, async (req: AuthRequest, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+
+      // Return user details from the decoded token
+      res.json({
+        userId: req.user.userId,
+        username: req.user.username,
+        email: req.user.email,
+        role: req.user.role,
+        fullName: req.user.fullName
+      });
+    } catch (error) {
+      console.error('Error fetching user details:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
   // ADDED: Validation
   app.post('/api/access-control/grant', authenticateToken, async (req: AuthRequest, res) => {
     try {

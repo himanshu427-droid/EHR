@@ -7,6 +7,7 @@
  * on Hyperledger Fabric blockchain
  */
 
+
 'use strict';
 
 const { Contract } = require('fabric-contract-api');
@@ -22,6 +23,38 @@ class EHRContract extends Contract {
     }
 
     /**
+     * Register a new user on the blockchain for audit purposes
+     * @param {String} userId - Unique user identifier (from database)
+     * @param {String} userRole - Role of the user (patient, doctor, etc.)
+     */
+    async userRegistered(ctx, userId, userRole) {
+        console.info('============= START : Register User ===========');
+
+        // Get the transaction timestamp (guaranteed to be consistent)
+        const txTimestamp = ctx.stub.getTxTimestamp();
+        
+        // Convert the Fabric timestamp to a standard ISO string
+        const timestamp = new Date(txTimestamp.seconds * 1000 + txTimestamp.nanos / 1000000).toISOString();
+
+        // Create a user object to store on the ledger
+        const user = {
+            userId: userId,
+            role: userRole,
+            timestamp: timestamp, // <-- Use the consistent timestamp
+            docType: 'user' // This makes it easy to query for users later
+        };
+
+        // Use the userId as the key to store the user data
+        await ctx.stub.putState(userId, Buffer.from(JSON.stringify(user)));
+        
+        console.info('============= END : Register User ===========');
+        
+        // Return the created user object
+        return JSON.stringify(user);
+    }
+
+ 
+    /**
      * Add a health record to the blockchain
      * @param {String} recordId - Unique record identifier
      * @param {String} patientId - Patient identifier
@@ -32,13 +65,19 @@ class EHRContract extends Contract {
     async addRecord(ctx, recordId, patientId, recordHash, doctorId, metadata) {
         console.info('============= START : Add Record ===========');
 
+        // Get the transaction timestamp (guaranteed to be consistent)
+        const txTimestamp = ctx.stub.getTxTimestamp();
+        
+        // Convert the Fabric timestamp to a standard ISO string
+        const timestamp = new Date(txTimestamp.seconds * 1000 + txTimestamp.nanos / 1000000).toISOString();
+
         const record = {
             recordId,
             patientId,
             recordHash,
             doctorId: doctorId || null,
             metadata: metadata || '{}',
-            timestamp: new Date().toISOString(),
+            timestamp,
             docType: 'record'
         };
 
@@ -80,13 +119,19 @@ class EHRContract extends Contract {
     async grantAccess(ctx, accessId, patientId, entityId, permissions) {
         console.info('============= START : Grant Access ===========');
 
+        // Get the transaction timestamp (guaranteed to be consistent)
+        const txTimestamp = ctx.stub.getTxTimestamp();
+        
+        // Convert the Fabric timestamp to a standard ISO string
+        const timestamp = new Date(txTimestamp.seconds * 1000 + txTimestamp.nanos / 1000000).toISOString();
+
         const accessControl = {
             accessId,
             patientId,
             entityId,
             permissions: permissions || '[]',
             status: 'active',
-            grantedAt: new Date().toISOString(),
+            grantedAt: timestamp,
             docType: 'accessControl'
         };
 
@@ -108,9 +153,15 @@ class EHRContract extends Contract {
             throw new Error(`Access control ${accessId} does not exist`);
         }
 
+        // Get the transaction timestamp (guaranteed to be consistent)
+        const txTimestamp = ctx.stub.getTxTimestamp();
+        
+        // Convert the Fabric timestamp to a standard ISO string
+        const timestamp = new Date(txTimestamp.seconds * 1000 + txTimestamp.nanos / 1000000).toISOString();
+
         const access = JSON.parse(accessBytes.toString());
         access.status = 'revoked';
-        access.revokedAt = new Date().toISOString();
+        access.revokedAt = timestamp;
 
         await ctx.stub.putState(accessId, Buffer.from(JSON.stringify(access)));
         console.info('============= END : Revoke Access ===========');
@@ -199,5 +250,7 @@ class EHRContract extends Contract {
 }
 
 module.exports = EHRContract;
+
+
 
 

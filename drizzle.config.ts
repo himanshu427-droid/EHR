@@ -1,14 +1,13 @@
-import { defineConfig } from "drizzle-kit";
-
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL, ensure the database is provisioned");
-}
+// drizzle.config.ts
+import { defineConfig } from 'drizzle-kit';
 
 export default defineConfig({
-  out: "./migrations",
-  schema: "./shared/schema.ts",
-  dialect: "postgresql",
+  dialect: 'postgresql', // 👈 This tells Drizzle it's Postgres
+  schema: './server/db/schema.ts', // 👈 Point to your schema.ts file
+  out: './drizzle', // 👈 Where to put migration files
   dbCredentials: {
-    url: process.env.DATABASE_URL,
+    url: process.env.DATABASE_URL!, // 👈 Your Neon connection string
   },
+  verbose: true,
+  strict: true,
 });

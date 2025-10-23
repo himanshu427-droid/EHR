@@ -1,21 +1,32 @@
+import { db } from './db/db';
 import {
-  type User,
-  type InsertUser,
-  type Record,
-  type InsertRecord,
-  type Prescription,
-  type InsertPrescription,
-  type LabReport,
-  type InsertLabReport,
-  type InsuranceClaim,
-  type InsertInsuranceClaim,
-  type AccessControl,
-  type InsertAccessControl,
-  type BlockchainAudit,
-  type InsertBlockchainAudit,
+  users,
+  records,
+  prescriptions,
+  labReports,
+  insuranceClaims,
+  accessControl,
+  blockchainAudit,
+} from './db/schema'; // <-- Import all table schemas
+import { eq } from 'drizzle-orm';
+import type {
+  User,
+  InsertUser,
+  Record,
+  InsertRecord,
+  Prescription,
+  InsertPrescription,
+  LabReport,
+  InsertLabReport,
+  InsuranceClaim,
+  InsertInsuranceClaim,
+  AccessControl,
+  InsertAccessControl,
+  BlockchainAudit,
+  InsertBlockchainAudit,
 } from '@shared/schema';
-import { randomUUID } from 'crypto';
 
+// This interface is great, no changes needed
 export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
@@ -66,216 +77,171 @@ export interface IStorage {
   createAuditLog(log: InsertBlockchainAudit): Promise<BlockchainAudit>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-  private records: Map<string, Record>;
-  private prescriptions: Map<string, Prescription>;
-  private labReports: Map<string, LabReport>;
-  private insuranceClaims: Map<string, InsuranceClaim>;
-  private accessControls: Map<string, AccessControl>;
-  private auditLogs: Map<string, BlockchainAudit>;
-
-  constructor() {
-    this.users = new Map();
-    this.records = new Map();
-    this.prescriptions = new Map();
-    this.labReports = new Map();
-    this.insuranceClaims = new Map();
-    this.accessControls = new Map();
-    this.auditLogs = new Map();
-  }
-
-  // User operations
+// Corrected PostgresStorage implementation
+export class PostgresStorage implements IStorage {
+  // User operations (These were already correct)
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find((user) => user.username === username);
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find((user) => user.email === email);
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id, createdAt: new Date() };
-    this.users.set(id, user);
+  async createUser(userData: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(userData).returning();
     return user;
   }
 
   async getAllUsers(): Promise<User[]> {
-    return Array.from(this.users.values());
+    return db.select().from(users);
   }
 
   // Record operations
   async getRecord(id: string): Promise<Record | undefined> {
-    return this.records.get(id);
+    const [record] = await db.select().from(records).where(eq(records.id, id));
+    return record;
   }
 
   async getRecordsByPatient(patientId: string): Promise<Record[]> {
-    return Array.from(this.records.values()).filter((r) => r.patientId === patientId);
+    return db.select().from(records).where(eq(records.patientId, patientId));
   }
 
   async getRecordsByDoctor(doctorId: string): Promise<Record[]> {
-    return Array.from(this.records.values()).filter((r) => r.doctorId === doctorId);
+    return db.select().from(records).where(eq(records.doctorId, doctorId));
   }
 
   async createRecord(insertRecord: InsertRecord): Promise<Record> {
-    const id = randomUUID();
-    const now = new Date();
-    const record: Record = { ...insertRecord, id, createdAt: now, updatedAt: now };
-    this.records.set(id, record);
+    const [record] = await db.insert(records).values(insertRecord).returning();
     return record;
   }
 
   async updateRecord(id: string, updates: Partial<Record>): Promise<Record> {
-    const record = this.records.get(id);
-    if (!record) throw new Error('Record not found');
-    const updated = { ...record, ...updates, updatedAt: new Date() };
-    this.records.set(id, updated);
-    return updated;
+    const [record] = await db.update(records).set(updates).where(eq(records.id, id)).returning();
+    return record;
   }
 
   // Prescription operations
   async getPrescription(id: string): Promise<Prescription | undefined> {
-    return this.prescriptions.get(id);
+    const [prescription] = await db.select().from(prescriptions).where(eq(prescriptions.id, id));
+    return prescription;
   }
 
   async getPrescriptionsByPatient(patientId: string): Promise<Prescription[]> {
-    return Array.from(this.prescriptions.values()).filter((p) => p.patientId === patientId);
+    return db.select().from(prescriptions).where(eq(prescriptions.patientId, patientId));
   }
 
   async getPrescriptionsByDoctor(doctorId: string): Promise<Prescription[]> {
-    return Array.from(this.prescriptions.values()).filter((p) => p.doctorId === doctorId);
+    return db.select().from(prescriptions).where(eq(prescriptions.doctorId, doctorId));
   }
 
   async createPrescription(insertPrescription: InsertPrescription): Promise<Prescription> {
-    const id = randomUUID();
-    const now = new Date();
-    const prescription: Prescription = { ...insertPrescription, id, createdAt: now, updatedAt: now };
-    this.prescriptions.set(id, prescription);
+    const [prescription] = await db.insert(prescriptions).values(insertPrescription).returning();
     return prescription;
   }
 
   async updatePrescription(id: string, updates: Partial<Prescription>): Promise<Prescription> {
-    const prescription = this.prescriptions.get(id);
-    if (!prescription) throw new Error('Prescription not found');
-    const updated = { ...prescription, ...updates, updatedAt: new Date() };
-    this.prescriptions.set(id, updated);
-    return updated;
+    const [prescription] = await db.update(prescriptions).set(updates).where(eq(prescriptions.id, id)).returning();
+    return prescription;
   }
 
   // Lab Report operations
   async getLabReport(id: string): Promise<LabReport | undefined> {
-    return this.labReports.get(id);
+    const [report] = await db.select().from(labReports).where(eq(labReports.id, id));
+    return report;
   }
 
   async getLabReportsByPatient(patientId: string): Promise<LabReport[]> {
-    return Array.from(this.labReports.values()).filter((r) => r.patientId === patientId);
+    return db.select().from(labReports).where(eq(labReports.patientId, patientId));
   }
 
   async getLabReportsByLab(labId: string): Promise<LabReport[]> {
-    return Array.from(this.labReports.values()).filter((r) => r.labId === labId);
+    return db.select().from(labReports).where(eq(labReports.labId, labId));
   }
 
   async createLabReport(insertReport: InsertLabReport): Promise<LabReport> {
-    const id = randomUUID();
-    const now = new Date();
-    const report: LabReport = { ...insertReport, id, createdAt: now, updatedAt: now };
-    this.labReports.set(id, report);
+    const [report] = await db.insert(labReports).values(insertReport).returning();
     return report;
   }
 
   async updateLabReport(id: string, updates: Partial<LabReport>): Promise<LabReport> {
-    const report = this.labReports.get(id);
-    if (!report) throw new Error('Lab report not found');
-    const updated = { ...report, ...updates, updatedAt: new Date() };
-    this.labReports.set(id, updated);
-    return updated;
+    const [report] = await db.update(labReports).set(updates).where(eq(labReports.id, id)).returning();
+    return report;
   }
 
   // Insurance Claim operations
   async getInsuranceClaim(id: string): Promise<InsuranceClaim | undefined> {
-    return this.insuranceClaims.get(id);
+    const [claim] = await db.select().from(insuranceClaims).where(eq(insuranceClaims.id, id));
+    return claim;
   }
 
   async getClaimsByPatient(patientId: string): Promise<InsuranceClaim[]> {
-    return Array.from(this.insuranceClaims.values()).filter((c) => c.patientId === patientId);
+    return db.select().from(insuranceClaims).where(eq(insuranceClaims.patientId, patientId));
   }
 
   async getClaimsByInsurance(insuranceId: string): Promise<InsuranceClaim[]> {
-    return Array.from(this.insuranceClaims.values()).filter((c) => c.insuranceId === insuranceId);
+    return db.select().from(insuranceClaims).where(eq(insuranceClaims.insuranceId, insuranceId));
   }
 
   async createClaim(insertClaim: InsertInsuranceClaim): Promise<InsuranceClaim> {
-    const id = randomUUID();
-    const now = new Date();
-    const claim: InsuranceClaim = { ...insertClaim, id, createdAt: now };
-    this.insuranceClaims.set(id, claim);
+    const [claim] = await db.insert(insuranceClaims).values(insertClaim).returning();
     return claim;
   }
 
   async updateClaim(id: string, updates: Partial<InsuranceClaim>): Promise<InsuranceClaim> {
-    const claim = this.insuranceClaims.get(id);
-    if (!claim) throw new Error('Insurance claim not found');
-    const updated = { ...claim, ...updates };
-    this.insuranceClaims.set(id, updated);
-    return updated;
+    const [claim] = await db.update(insuranceClaims).set(updates).where(eq(insuranceClaims.id, id)).returning();
+    return claim;
   }
 
   // Access Control operations
   async getAccessControl(id: string): Promise<AccessControl | undefined> {
-    return this.accessControls.get(id);
+    const [access] = await db.select().from(accessControl).where(eq(accessControl.id, id));
+    return access;
   }
 
   async getAccessByPatient(patientId: string): Promise<AccessControl[]> {
-    return Array.from(this.accessControls.values()).filter((a) => a.patientId === patientId);
+    return db.select().from(accessControl).where(eq(accessControl.patientId, patientId));
   }
 
   async getAccessByEntity(entityId: string): Promise<AccessControl[]> {
-    return Array.from(this.accessControls.values()).filter((a) => a.entityId === entityId);
+    return db.select().from(accessControl).where(eq(accessControl.entityId, entityId));
   }
 
   async createAccessControl(insertAccess: InsertAccessControl): Promise<AccessControl> {
-    const id = randomUUID();
-    const access: AccessControl = { ...insertAccess, id, grantedAt: new Date(), revokedAt: null };
-    this.accessControls.set(id, access);
+    const [access] = await db.insert(accessControl).values(insertAccess).returning();
     return access;
   }
 
   async updateAccessControl(id: string, updates: Partial<AccessControl>): Promise<AccessControl> {
-    const access = this.accessControls.get(id);
-    if (!access) throw new Error('Access control not found');
-    const updated = { ...access, ...updates };
-    this.accessControls.set(id, updated);
-    return updated;
+    const [access] = await db.update(accessControl).set(updates).where(eq(accessControl.id, id)).returning();
+    return access;
   }
 
   // Blockchain Audit operations
   async getBlockchainAudit(id: string): Promise<BlockchainAudit | undefined> {
-    return this.auditLogs.get(id);
+    const [log] = await db.select().from(blockchainAudit).where(eq(blockchainAudit.id, id));
+    return log;
   }
 
   async getAllAuditLogs(): Promise<BlockchainAudit[]> {
-    return Array.from(this.auditLogs.values()).sort((a, b) => 
-      b.timestamp.getTime() - a.timestamp.getTime()
-    );
+    return db.select().from(blockchainAudit); // You can add ordering here if needed
   }
 
   async getAuditLogsByEntity(entityId: string): Promise<BlockchainAudit[]> {
-    return Array.from(this.auditLogs.values())
-      .filter((log) => log.entityId === entityId)
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    return db.select().from(blockchainAudit).where(eq(blockchainAudit.entityId, entityId));
   }
 
   async createAuditLog(insertLog: InsertBlockchainAudit): Promise<BlockchainAudit> {
-    const id = randomUUID();
-    const log: BlockchainAudit = { ...insertLog, id, timestamp: new Date() };
-    this.auditLogs.set(id, log);
+    const [log] = await db.insert(blockchainAudit).values(insertLog).returning();
     return log;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new PostgresStorage();

@@ -34,65 +34,13 @@ The system supports 6 distinct user roles, each with specific permissions:
 
 ## 📦 Prerequisites
 
-### For Replit Development
-- Node.js 20+
-- npm or yarn
-
 ### For Local Deployment with Hyperledger Fabric
 - Docker 20.10+
 - Docker Compose 2.0+
 - Node.js 20+
 - Git
 - **Hyperledger Fabric** fabric-samples repository
-
-## 🚀 Quick Start (Replit - Development Mode)
-
-The application is configured to run on Replit without Docker using:
-- **In-memory storage** instead of MongoDB
-- **Blockchain simulation service** instead of Hyperledger Fabric
-
-This allows you to test all features without infrastructure setup. All blockchain operations are simulated but behave identically to the production Fabric implementation.
-
-1. The workflow automatically starts with `npm run dev`
-2. Access the application at the Replit URL
-3. Register a new account with any role
-4. Login and explore the dashboard
-5. All features work including blockchain logging and verification
-
-**Note:** For production deployment with real Hyperledger Fabric, see the "Local Deployment with Hyperledger Fabric" section below.
-
-## 🐳 Local Deployment with Docker (Without Fabric)
-
-Run the complete stack using Docker Compose:
-
-```bash
-# Clone the repository
-git clone <your-repo-url>
-cd medichain-ehr
-
-# Create .env file with required secrets
-cp .env.example .env
-
-# Generate a strong JWT secret
-openssl rand -base64 32
-
-# Add the generated secret to .env file:
-# JWT_SECRET=<your-generated-secret>
-
-# Build and start all services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop all services
-docker-compose down
-```
-
-**Access the application:**
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:5000
-- MongoDB: localhost:27017
+  
 
 ## ⛓️ Local Deployment with Hyperledger Fabric
 
@@ -138,139 +86,16 @@ You should see containers for:
 - `ca_org1` and `ca_org2`
 
 ### Step 2: Deploy the Chaincode
-
-1. **Copy chaincode to fabric-samples:**
-
+Go to fabric-samples/test-network, then run:
 ```bash
-# From your project directory
-cp -r chaincode ~/fabric-samples/test-network/chaincode/ehr
+./network.sh deployCC -c ehrchannel \
+                      -ccn ehr \
+                      -ccv 1 \
+                      -ccs 1 \
+                      -ccp "Your_project_root/chaincode" \
+                      -ccl javascript
 ```
 
-2. **Package the chaincode:**
-
-```bash
-cd ~/fabric-samples/test-network
-export PATH=${PWD}/../bin:$PATH
-export FABRIC_CFG_PATH=$PWD/../config/
-
-peer lifecycle chaincode package ehr.tar.gz \
-  --path ../chaincode/ehr \
-  --lang node \
-  --label ehr_1.0
-```
-
-3. **Install chaincode on Org1 peer:**
-
-```bash
-export CORE_PEER_TLS_ENABLED=true
-export CORE_PEER_LOCALMSPID="Org1MSP"
-export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
-export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
-export CORE_PEER_ADDRESS=localhost:7051
-
-peer lifecycle chaincode install ehr.tar.gz
-```
-
-4. **Install chaincode on Org2 peer:**
-
-```bash
-export CORE_PEER_LOCALMSPID="Org2MSP"
-export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
-export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp
-export CORE_PEER_ADDRESS=localhost:9051
-
-peer lifecycle chaincode install ehr.tar.gz
-```
-
-5. **Query installed chaincode to get package ID:**
-
-```bash
-peer lifecycle chaincode queryinstalled
-```
-
-Copy the Package ID (format: `ehr_1.0:hash`)
-
-6. **Approve chaincode for Org1:**
-
-```bash
-export CC_PACKAGE_ID=<your-package-id>
-
-export CORE_PEER_LOCALMSPID="Org1MSP"
-export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
-export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
-export CORE_PEER_ADDRESS=localhost:7051
-
-peer lifecycle chaincode approveformyorg \
-  -o localhost:7050 \
-  --ordererTLSHostnameOverride orderer.example.com \
-  --channelID ehrchannel \
-  --name ehr \
-  --version 1.0 \
-  --package-id $CC_PACKAGE_ID \
-  --sequence 1 \
-  --tls \
-  --cafile ${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
-```
-
-7. **Approve chaincode for Org2:**
-
-```bash
-export CORE_PEER_LOCALMSPID="Org2MSP"
-export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp
-export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
-export CORE_PEER_ADDRESS=localhost:9051
-
-peer lifecycle chaincode approveformyorg \
-  -o localhost:7050 \
-  --ordererTLSHostnameOverride orderer.example.com \
-  --channelID ehrchannel \
-  --name ehr \
-  --version 1.0 \
-  --package-id $CC_PACKAGE_ID \
-  --sequence 1 \
-  --tls \
-  --cafile ${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
-```
-
-8. **Check commit readiness:**
-
-```bash
-peer lifecycle chaincode checkcommitreadiness \
-  --channelID ehrchannel \
-  --name ehr \
-  --version 1.0 \
-  --sequence 1 \
-  --tls \
-  --cafile ${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem \
-  --output json
-```
-
-9. **Commit the chaincode:**
-
-```bash
-peer lifecycle chaincode commit \
-  -o localhost:7050 \
-  --ordererTLSHostnameOverride orderer.example.com \
-  --channelID ehrchannel \
-  --name ehr \
-  --version 1.0 \
-  --sequence 1 \
-  --tls \
-  --cafile ${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem \
-  --peerAddresses localhost:7051 \
-  --tlsRootCertFiles ${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt \
-  --peerAddresses localhost:9051 \
-  --tlsRootCertFiles ${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
-```
-
-10. **Verify chaincode is committed:**
-
-```bash
-peer lifecycle chaincode querycommitted \
-  --channelID ehrchannel \
-  --name ehr \
-  --cafile ${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
-```
 
 ### Step 3: Configure Backend to Use Fabric
 
@@ -297,26 +122,11 @@ FABRIC_WALLET_PATH=./fabric-wallet
 FABRIC_USER=admin
 ```
 
-2. **Replace the blockchain simulation with real Fabric SDK:**
-
-Update `server/fabric/blockchain.ts` to use the actual `fabric-network` SDK:
-
-```typescript
-import { Gateway, Wallets } from 'fabric-network';
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
-
-// Load connection profile
-const ccpPath = resolve(__dirname, 'network-config.yaml');
-const ccp = JSON.parse(readFileSync(ccpPath, 'utf8'));
-
-// Connect to Fabric gateway and submit transactions
-```
 
 ### Step 4: Start the Application
 
 1. **Start MongoDB:**
-
+(Either Use your active MONGO_URI)
 ```bash
 docker run -d -p 27017:27017 --name ehr-mongodb \
   -e MONGO_INITDB_ROOT_USERNAME=admin \
@@ -328,7 +138,7 @@ docker run -d -p 27017:27017 --name ehr-mongodb \
 
 ```bash
 npm install
-npm run dev
+npm run dev:backend
 ```
 
 3. **Start the frontend (separate terminal):**
@@ -337,6 +147,10 @@ npm run dev
 cd client
 npm run build
 npx serve -s dist -p 3000
+```
+or 
+```
+npm run dev:frontend
 ```
 
 **Access:**

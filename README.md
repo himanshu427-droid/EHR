@@ -34,65 +34,13 @@ The system supports 6 distinct user roles, each with specific permissions:
 
 ## 📦 Prerequisites
 
-### For Replit Development
-- Node.js 20+
-- npm or yarn
-
 ### For Local Deployment with Hyperledger Fabric
 - Docker 20.10+
 - Docker Compose 2.0+
 - Node.js 20+
 - Git
 - **Hyperledger Fabric** fabric-samples repository
-
-## 🚀 Quick Start (Replit - Development Mode)
-
-The application is configured to run on Replit without Docker using:
-- **In-memory storage** instead of MongoDB
-- **Blockchain simulation service** instead of Hyperledger Fabric
-
-This allows you to test all features without infrastructure setup. All blockchain operations are simulated but behave identically to the production Fabric implementation.
-
-1. The workflow automatically starts with `npm run dev`
-2. Access the application at the Replit URL
-3. Register a new account with any role
-4. Login and explore the dashboard
-5. All features work including blockchain logging and verification
-
-**Note:** For production deployment with real Hyperledger Fabric, see the "Local Deployment with Hyperledger Fabric" section below.
-
-## 🐳 Local Deployment with Docker (Without Fabric)
-
-Run the complete stack using Docker Compose:
-
-```bash
-# Clone the repository
-git clone <your-repo-url>
-cd medichain-ehr
-
-# Create .env file with required secrets
-cp .env.example .env
-
-# Generate a strong JWT secret
-openssl rand -base64 32
-
-# Add the generated secret to .env file:
-# JWT_SECRET=<your-generated-secret>
-
-# Build and start all services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop all services
-docker-compose down
-```
-
-**Access the application:**
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:5000
-- MongoDB: localhost:27017
+  
 
 ## ⛓️ Local Deployment with Hyperledger Fabric
 

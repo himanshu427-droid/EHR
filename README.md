@@ -122,21 +122,6 @@ FABRIC_WALLET_PATH=./fabric-wallet
 FABRIC_USER=admin
 ```
 
-2. **Replace the blockchain simulation with real Fabric SDK:**
-
-Update `server/fabric/blockchain.ts` to use the actual `fabric-network` SDK:
-
-```typescript
-import { Gateway, Wallets } from 'fabric-network';
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
-
-// Load connection profile
-const ccpPath = resolve(__dirname, 'network-config.yaml');
-const ccp = JSON.parse(readFileSync(ccpPath, 'utf8'));
-
-// Connect to Fabric gateway and submit transactions
-```
 
 ### Step 4: Start the Application
 

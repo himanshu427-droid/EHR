@@ -153,29 +153,44 @@ cd ~/fabric-samples/test-network
 ## 📁 Project Structure
 
 ```
-├── chaincode/              # Hyperledger Fabric smart contracts
-│   ├── ehr_contract.js    # Main chaincode implementation
-│   ├── index.js
-│   └── package.json
-├── client/                 # React frontend
-│   ├── src/
-│   │   ├── pages/         # Page components (dashboards, forms)
-│   │   ├── components/    # Reusable UI components
-│   │   └── lib/           # Utilities and auth
-├── server/                 # Express backend
-│   ├── fabric/            # Blockchain integration
-│   │   ├── blockchain.ts  # Blockchain service
-│   │   └── network-config.yaml
-│   ├── middleware/        # Auth middleware
-│   ├── routes.ts          # API routes
-│   └── storage.ts         # Data storage interface
-├── shared/                 # Shared types and schemas
-│   └── schema.ts
-├── docker-compose.yml      # Docker orchestration
-├── Dockerfile.frontend
-├── Dockerfile.backend
-└── README.md
+/ (EHR Project Root)
+├── .env                  # Environment variables (DB URL, etc.)
+├── README.md             # Project documentation
+├── chaincode/            # Hyperledger Fabric smart contract
+│   └── ehr_contract.js   # The main smart contract logic
+├── client/               # React frontend application
+│   ├── index.html
+│   └── src/
+│       ├── App.tsx       # Main app component
+│       ├── components/   # Reusable UI components
+│       ├── hooks/        # Custom React hooks
+│       ├── lib/          # Helper functions (api.ts, auth.ts)
+│       ├── main.tsx      # React entry point
+│       └── pages/        # All app pages (login, dashboard, etc.)
+├── drizzle.config.ts     # Drizzle ORM configuration
+├── drizzle/              # Generated database migration files
+│   └── ...
+├── fabric-samples/       # Hyperledger Fabric test network
+│   └── test-network/
+│       ├── network.sh    # Script to start/stop the network
+│       └── ...
+├── server/               # Node.js/Express backend API
+│   ├── db/
+│   │   ├── db.ts         # Drizzle client connection
+│   │   └── schema.ts     # Drizzle database table definitions
+│   ├── fabric/
+│   │   └── blockchain.ts # Service for interacting with Fabric
+│   ├── wallet/           # Fabric wallet for storing user certs
+│   ├── index.ts          # Server entry point
+│   ├── routes.ts         # All API routes
+│   └── storage.ts        # Database logic (PostgresStorage class)
+├── shared/               # Code shared between frontend and backend
+│   └── schema.ts         # Zod schemas and shared types
+├── package.json          # Project dependencies and scripts
+├── tsconfig.json         # TypeScript configuration
+└── vite.config.ts        # Vite configuration
 ```
+
 
 ## 🔐 Security
 

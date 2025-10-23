@@ -46,23 +46,18 @@ The system supports 6 distinct user roles, each with specific permissions:
 
 ### Step 1: Set Up Hyperledger Fabric Network
 
-1. **Clone fabric-samples repository:**
+1. **Clone project repository:**
 
 ```bash
 cd ~
-git clone https://github.com/hyperledger/fabric-samples.git
+git clone https://github.com/himanshu427-droid/EHR.git
+
+```
+
+2. **Start the test network:**
+
+```bash
 cd fabric-samples/test-network
-```
-
-2. **Download Fabric binaries and Docker images:**
-
-```bash
-curl -sSL https://bit.ly/2ysbOFE | bash -s -- 2.5.0 1.5.5
-```
-
-3. **Start the test network:**
-
-```bash
 ./network.sh up createChannel -c ehrchannel -ca
 ```
 
@@ -73,7 +68,7 @@ This command:
 - Creates a channel named `ehrchannel`
 - Starts Certificate Authorities
 
-4. **Verify the network is running:**
+3. **Verify the network is running:**
 
 ```bash
 docker ps
@@ -125,55 +120,22 @@ FABRIC_USER=admin
 
 ### Step 4: Start the Application
 
-1. **Start MongoDB:**
-(Either Use your active MONGO_URI)
+1. **Start backend after setting up neon connection in .env**
 ```bash
-docker run -d -p 27017:27017 --name ehr-mongodb \
-  -e MONGO_INITDB_ROOT_USERNAME=admin \
-  -e MONGO_INITDB_ROOT_PASSWORD=password123 \
-  mongo:7
+npm run db:generate
+npm run db:push
 ```
 
-2. **Start the backend:**
+2. **Start your app(frontend+backend): **
 
 ```bash
 npm install
-npm run dev:backend
-```
-
-3. **Start the frontend (separate terminal):**
-
-```bash
-cd client
-npm run build
-npx serve -s dist -p 3000
-```
-or 
-```
-npm run dev:frontend
+npm run dev
 ```
 
 **Access:**
-- Frontend: http://localhost:3000
-- Backend: http://localhost:5000
-- Fabric Network: Running locally via fabric-samples
+-App can be accessed at http://localhost:5000/
 
-### Step 5: Test the Integration
-
-1. Register a new patient account
-2. Upload a health record
-3. Check the blockchain audit log - you should see real Fabric transaction IDs
-4. Verify the transaction on Fabric:
-
-```bash
-cd ~/fabric-samples/test-network
-peer chaincode query \
-  -C ehrchannel \
-  -n ehr \
-  -c '{"function":"getRecordHistory","Args":["<patient-id>"]}' \
-  --peerAddresses localhost:7051 \
-  --tlsRootCertFiles ${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
-```
 
 ## 🧹 Cleanup
 
@@ -191,29 +153,44 @@ cd ~/fabric-samples/test-network
 ## 📁 Project Structure
 
 ```
-├── chaincode/              # Hyperledger Fabric smart contracts
-│   ├── ehr_contract.js    # Main chaincode implementation
-│   ├── index.js
-│   └── package.json
-├── client/                 # React frontend
-│   ├── src/
-│   │   ├── pages/         # Page components (dashboards, forms)
-│   │   ├── components/    # Reusable UI components
-│   │   └── lib/           # Utilities and auth
-├── server/                 # Express backend
-│   ├── fabric/            # Blockchain integration
-│   │   ├── blockchain.ts  # Blockchain service
-│   │   └── network-config.yaml
-│   ├── middleware/        # Auth middleware
-│   ├── routes.ts          # API routes
-│   └── storage.ts         # Data storage interface
-├── shared/                 # Shared types and schemas
-│   └── schema.ts
-├── docker-compose.yml      # Docker orchestration
-├── Dockerfile.frontend
-├── Dockerfile.backend
-└── README.md
+/ (EHR Project Root)
+├── .env                  # Environment variables (DB URL, etc.)
+├── README.md             # Project documentation
+├── chaincode/            # Hyperledger Fabric smart contract
+│   └── ehr_contract.js   # The main smart contract logic
+├── client/               # React frontend application
+│   ├── index.html
+│   └── src/
+│       ├── App.tsx       # Main app component
+│       ├── components/   # Reusable UI components
+│       ├── hooks/        # Custom React hooks
+│       ├── lib/          # Helper functions (api.ts, auth.ts)
+│       ├── main.tsx      # React entry point
+│       └── pages/        # All app pages (login, dashboard, etc.)
+├── drizzle.config.ts     # Drizzle ORM configuration
+├── drizzle/              # Generated database migration files
+│   └── ...
+├── fabric-samples/       # Hyperledger Fabric test network
+│   └── test-network/
+│       ├── network.sh    # Script to start/stop the network
+│       └── ...
+├── server/               # Node.js/Express backend API
+│   ├── db/
+│   │   ├── db.ts         # Drizzle client connection
+│   │   └── schema.ts     # Drizzle database table definitions
+│   ├── fabric/
+│   │   └── blockchain.ts # Service for interacting with Fabric
+│   ├── wallet/           # Fabric wallet for storing user certs
+│   ├── index.ts          # Server entry point
+│   ├── routes.ts         # All API routes
+│   └── storage.ts        # Database logic (PostgresStorage class)
+├── shared/               # Code shared between frontend and backend
+│   └── schema.ts         # Zod schemas and shared types
+├── package.json          # Project dependencies and scripts
+├── tsconfig.json         # TypeScript configuration
+└── vite.config.ts        # Vite configuration
 ```
+
 
 ## 🔐 Security
 
@@ -224,39 +201,6 @@ cd ~/fabric-samples/test-network
 - **Blockchain-based audit logging**
 - **Permission-based access control**
 
-### Security Setup
-
-**IMPORTANT:** Before deploying, you MUST:
-
-1. **Generate a strong JWT secret:**
-   ```bash
-   openssl rand -base64 32
-   ```
-
-2. **Set the JWT_SECRET environment variable:**
-   - **Docker:** Add to `.env` file before running `docker-compose up`
-   - **Replit:** Add to Secrets tab with key `JWT_SECRET`
-   - **Manual:** Export in your shell: `export JWT_SECRET="your-secret"`
-
-3. **Never commit secrets to version control**
-   - The `.env` file is git-ignored
-   - Use environment variables for all secrets
-   - Rotate secrets regularly in production
-
-## 🤝 Contributing
-
-This is an MVP prototype. For production deployment:
-
-1. Use proper certificate management for Fabric
-2. Implement IPFS for distributed file storage
-3. Add comprehensive error handling
-4. Set up monitoring and alerting
-5. Configure production-grade databases
-6. Implement rate limiting and DDoS protection
-
-## 📄 License
-
-This project is for educational purposes.
 
 ## 🆘 Troubleshooting
 

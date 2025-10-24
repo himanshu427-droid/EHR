@@ -1,338 +1,352 @@
 import { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/dashboard-layout';
-import { useAuth } from '@/lib/auth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Shield, Plus, UserCheck, UserX, AlertCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { MailCheck, Check, AlertCircle, X , Users} from 'lucide-react'; // Added X for revoke
 import { useToast } from '@/hooks/use-toast';
-import { queryClient, apiRequest } from '@/lib/queryClient';
-import type { AccessControl } from '@shared/schema';
+import { api } from '@/lib/api';
+// Import the type, not the value, from shared schema
+import type { AccessControl, UserRoleType } from '@shared/schema';
 
-export default function Consent() {
-  const { user } = useAuth();
+// --- DEFINE THE INTERFACE FOR PENDING REQUESTS ---
+interface PendingRequest {
+  accessId: string;
+  entity: {
+    id: string;
+    fullName: string;
+    organization: string | null;
+    specialty: string | null;
+    role: UserRoleType; // <-- Use the UserRoleType here
+  };
+  permissions: string[]; // Assuming permissions is string[] based on schema
+  status: 'pending'; // Explicitly pending
+}
+
+// Helper function to handle fetch errors (assuming api.ts doesn't handle all errors)
+// If your api.ts response interceptor handles errors well, you might not need this
+// async function handleFetchErrors(response: Response) {
+//   if (!response.ok) {
+//     const errorData = await response.json();
+//     throw new Error(errorData.message || 'An error occurred');
+//   }
+//   return response.json();
+// }
+
+
+export default function ConsentPage() {
+  const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
-  const [selectedAccess, setSelectedAccess] = useState<AccessControl | null>(null);
-  const [formData, setFormData] = useState({
-    entityId: '',
-    entityType: '',
-    permissions: [] as string[],
-  });
 
-  const { data: accessControls, isLoading } = useQuery<AccessControl[]>({
-    queryKey: ['/api/access-control/granted'],
-  });
-
-  const grantMutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
-      const response = await apiRequest('POST', '/api/access-control/grant', data);
-      return await response.json();
+  // --- QUERY FOR PENDING REQUESTS ---
+  // Use the correctly defined PendingRequest interface
+  const { data: pending, isLoading: pendingLoading } = useQuery<
+    PendingRequest[] // <-- Ensure this uses the interface
+  >({
+    queryKey: ['/api/access/pending-requests'],
+    queryFn: async () => {
+      const res = await api.get('/access/pending-requests');
+      return res.data; // Assuming axios handles JSON parsing
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/access-control/granted'] });
+  });
+
+  // --- QUERY FOR GRANTED ACCESS ---
+  // Assuming a similar structure for granted access, define an interface
+   interface GrantedAccess extends AccessControl { // Extend base AccessControl
+       entity: {
+           id: string;
+           fullName: string;
+           role: UserRoleType;
+           specialty: string | null;
+           organization: string | null;
+       } | null; // Entity might be null if user deleted?
+   }
+
+   const { data: granted, isLoading: grantedLoading } = useQuery<GrantedAccess[]>({
+       queryKey: ['/api/access/granted'],
+       queryFn: async () => {
+           const res = await api.get('/access/granted');
+           return res.data;
+       }
+   });
+
+  // --- MUTATION TO APPROVE ACCESS ---
+  const approveMutation = useMutation<AccessControl, Error, string>({
+    mutationFn: async (accessId) => {
+      const res = await api.post('/access/approve', { accessId });
+      return res.data;
+    },
+    onSuccess: (data) => {
       toast({
-        title: 'Access granted',
-        description: 'Permission has been recorded on the blockchain.',
+        title: 'Access Approved',
+        description: `Access granted successfully.`,
       });
-      setIsDialogOpen(false);
-      setFormData({ entityId: '', entityType: '', permissions: [] });
+      // Invalidate both queries to update lists
+      queryClient.invalidateQueries({
+        queryKey: ['/api/access/pending-requests'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['/api/access/granted'],
+      });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
-        title: 'Failed to grant access',
-        description: error.message,
+        title: 'Approval Failed',
+        description: error.message || 'Could not approve access.',
         variant: 'destructive',
       });
     },
   });
 
-  const revokeMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const response = await apiRequest('POST', '/api/access-control/revoke', { id });
-      return await response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/access-control/granted'] });
-      toast({
-        title: 'Access revoked',
-        description: 'Permission has been revoked on the blockchain.',
-      });
-      setRevokeDialogOpen(false);
-      setSelectedAccess(null);
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Failed to revoke access',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
+   // --- MUTATION TO REVOKE ACCESS ---
+   const revokeMutation = useMutation<AccessControl, Error, string>({
+       mutationFn: async (accessId) => {
+           const res = await api.post('/access/revoke', { id: accessId }); // API uses 'id' field
+           return res.data;
+       },
+       onSuccess: () => {
+           toast({
+               title: 'Access Revoked',
+               description: 'Access has been successfully revoked.',
+           });
+           // Invalidate both queries
+           queryClient.invalidateQueries({ queryKey: ['/api/access/pending-requests'] });
+           queryClient.invalidateQueries({ queryKey: ['/api/access/granted'] });
+       },
+       onError: (error: Error) => {
+           toast({
+               title: 'Revoke Failed',
+               description: error.message || 'Could not revoke access.',
+               variant: 'destructive',
+           });
+       },
+   });
 
-  const handleGrant = () => {
-    if (!formData.entityId || !formData.entityType || formData.permissions.length === 0) {
-      toast({
-        title: 'Missing information',
-        description: 'Please fill in all required fields.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    grantMutation.mutate({
-      ...formData,
-      patientId: user?.userId || '',
-    });
+  // --- HANDLERS ---
+  const handleApprove = (accessId: string) => {
+    console.log('Approving access id for: ',accessId );
+    approveMutation.mutate(accessId);
   };
 
-  const handleRevoke = () => {
-    if (selectedAccess) {
-      revokeMutation.mutate(selectedAccess.id);
-    }
-  };
+  const handleRevoke = (accessId: string) => {
+       revokeMutation.mutate(accessId);
+   };
 
-  const togglePermission = (permission: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      permissions: prev.permissions.includes(permission)
-        ? prev.permissions.filter((p) => p !== permission)
-        : [...prev.permissions, permission],
-    }));
-  };
-
-  const activeAccess = accessControls?.filter((a) => a.status === 'active') || [];
-  const revokedAccess = accessControls?.filter((a) => a.status === 'revoked') || [];
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Consent Management</h1>
-            <p className="text-muted-foreground mt-2">Control who can access your health records</p>
-          </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2" data-testid="button-grant-access">
-                <Plus className="w-4 h-4" />
-                Grant Access
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Grant Data Access</DialogTitle>
-                <DialogDescription>
-                  Allow a healthcare provider or organization to access your records
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="entityType">Entity Type *</Label>
-                  <Select
-                    value={formData.entityType}
-                    onValueChange={(value) => setFormData({ ...formData, entityType: value })}
-                  >
-                    <SelectTrigger data-testid="select-entity-type">
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="doctor">Doctor</SelectItem>
-                      <SelectItem value="lab">Laboratory</SelectItem>
-                      <SelectItem value="insurance">Insurance Company</SelectItem>
-                      <SelectItem value="researcher">Researcher</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="entityId">Entity ID/Username *</Label>
-                  <Input
-                    id="entityId"
-                    placeholder="Enter username or ID"
-                    value={formData.entityId}
-                    onChange={(e) => setFormData({ ...formData, entityId: e.target.value })}
-                    data-testid="input-entity-id"
-                  />
-                </div>
-                <div className="space-y-3">
-                  <Label>Permissions *</Label>
-                  <div className="space-y-2">
-                    {['view_records', 'view_prescriptions', 'view_lab_reports'].map((permission) => (
-                      <div key={permission} className="flex items-center justify-between p-3 rounded-md border">
-                        <Label htmlFor={permission} className="cursor-pointer capitalize">
-                          {permission.replace(/_/g, ' ')}
-                        </Label>
-                        <Switch
-                          id={permission}
-                          checked={formData.permissions.includes(permission)}
-                          onCheckedChange={() => togglePermission(permission)}
-                          data-testid={`switch-${permission}`}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <Button
-                  className="w-full"
-                  onClick={handleGrant}
-                  disabled={grantMutation.isPending}
-                  data-testid="button-confirm-grant"
-                >
-                  {grantMutation.isPending ? 'Granting...' : 'Grant Access'}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Manage Consent</h1>
+          <p className="text-muted-foreground mt-2">
+            Approve pending requests and manage existing access grants.
+          </p>
         </div>
 
+        {/* Pending Requests Section */}
         <Card>
           <CardHeader>
-            <CardTitle>Active Permissions</CardTitle>
-            <CardDescription>Entities with current access to your data</CardDescription>
+            <CardTitle>Pending Access Requests</CardTitle>
+            <CardDescription>
+              Review requests from doctors, labs, or researchers to access your
+              records.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {pendingLoading ? (
               <div className="space-y-3">
-                {[...Array(3)].map((_, i) => (
-                  <Skeleton key={i} className="h-24 w-full" />
+                {[...Array(2)].map((_, i) => (
+                  <Skeleton key={i} className="h-20 w-full" />
                 ))}
               </div>
-            ) : activeAccess.length === 0 ? (
+            ) : !pending || pending.length === 0 ? ( // Check for falsy or empty
               <div className="text-center py-12">
-                <Shield className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No active consents</h3>
-                <p className="text-sm text-muted-foreground mb-6">
-                  You haven't granted access to anyone yet
+                <MailCheck className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
+                <p className="text-sm text-muted-foreground">
+                  No pending access requests.
                 </p>
-                <Button onClick={() => setIsDialogOpen(true)} data-testid="button-grant-first-access">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Grant Your First Access
-                </Button>
               </div>
             ) : (
               <div className="space-y-3">
-                {activeAccess.map((access) => (
-                  <Card key={access.id} data-testid={`access-card-${access.id}`}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0 space-y-3">
-                          <div className="flex items-center gap-3">
-                            <UserCheck className="w-5 h-5 text-success" />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium">Entity ID: {access.entityId}</p>
-                              <p className="text-sm text-muted-foreground capitalize">
-                                {access.entityType}
-                              </p>
-                            </div>
-                            <Badge className="bg-success text-white shrink-0">Active</Badge>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {(access.permissions as string[]).map((permission) => (
-                              <Badge key={permission} variant="secondary" className="text-xs">
-                                {permission.replace(/_/g, ' ')}
-                              </Badge>
-                            ))}
-                          </div>
-                          <div className="flex items-center justify-between pt-2">
-                            <span className="text-xs text-muted-foreground">
-                              Granted {new Date(access.grantedAt).toLocaleDateString()}
-                            </span>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => {
-                                setSelectedAccess(access);
-                                setRevokeDialogOpen(true);
-                              }}
-                              data-testid={`button-revoke-${access.id}`}
-                            >
-                              Revoke Access
-                            </Button>
-                          </div>
+                {/* --- ADDED Array.isArray CHECK --- */}
+                {Array.isArray(pending) ? (
+                  pending.map((req) => (
+                    <div
+                      key={req.accessId}
+                      className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-md border gap-3"
+                      data-testid={`request-${req.accessId}`}
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <Avatar>
+                          <AvatarFallback>
+                            {req.entity.fullName.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium text-sm truncate">
+                            {req.entity.fullName}
+                          </p>
+                          <p className="text-xs text-muted-foreground capitalize">
+                            {req.entity.role.replace('_', ' ')}
+                            {req.entity.specialty &&
+                              ` - ${req.entity.specialty}`}
+                            {req.entity.organization &&
+                              ` (${req.entity.organization})`}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Permissions Requested:{' '}
+                            <Badge variant="outline" className="ml-1">
+                              {req.permissions.join(', ')}
+                            </Badge>
+                          </p>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      <div className="flex gap-2 w-full sm:w-auto justify-end">
+                        {/* You might add a Deny/Reject button here */}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleRevoke(req.accessId)} // Deny = Revoke a pending request
+                          disabled={revokeMutation.isPending && revokeMutation.variables === req.accessId}
+                          data-testid={`deny-${req.accessId}`}
+                        >
+                           {revokeMutation.isPending && revokeMutation.variables === req.accessId ? (
+                             <div className="animate-spin w-4 h-4 mr-2" />
+                           ) : (
+                             <X className="w-4 h-4 mr-2" />
+                           )}
+                           Deny
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleApprove(req.accessId)}
+                          disabled={
+                            approveMutation.isPending &&
+                            approveMutation.variables === req.accessId
+                          }
+                          data-testid={`approve-${req.accessId}`}
+                        >
+                          {approveMutation.isPending &&
+                          approveMutation.variables === req.accessId ? (
+                            <div className="animate-spin w-4 h-4 mr-2" />
+                          ) : (
+                            <Check className="w-4 h-4 mr-2" />
+                          )}
+                          Approve
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  // Fallback if data is not an array (shouldn't happen with correct API/types)
+                  <div className="text-center py-12 text-destructive">
+                    <AlertCircle className="w-12 h-12 mx-auto mb-3" />
+                    <p>Error: Could not load pending requests properly.</p>
+                  </div>
+                )}
+                {/* --- END OF Array.isArray CHECK --- */}
               </div>
             )}
           </CardContent>
         </Card>
 
-        {revokedAccess.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Revoked Permissions</CardTitle>
-              <CardDescription>Previously granted access that has been revoked</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {revokedAccess.map((access) => (
-                  <div
-                    key={access.id}
-                    className="flex items-center justify-between p-3 rounded-md border opacity-60"
-                    data-testid={`revoked-access-${access.id}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <UserX className="w-4 h-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm font-medium">Entity ID: {access.entityId}</p>
-                        <p className="text-xs text-muted-foreground capitalize">
-                          {access.entityType} • Revoked {access.revokedAt && new Date(access.revokedAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                    <Badge variant="secondary">Revoked</Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+         {/* Granted Access Section */}
+         <Card>
+           <CardHeader>
+             <CardTitle>Active Access Grants</CardTitle>
+             <CardDescription>
+               Entities you have currently granted access to your records.
+             </CardDescription>
+           </CardHeader>
+           <CardContent>
+             {grantedLoading ? (
+               <div className="space-y-3">
+                 {[...Array(2)].map((_, i) => (
+                   <Skeleton key={i} className="h-20 w-full" />
+                 ))}
+               </div>
+             ) : !granted || granted.length === 0 ? (
+               <div className="text-center py-12">
+                 <Users className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
+                 <p className="text-sm text-muted-foreground">
+                   You haven't granted access to anyone yet.
+                 </p>
+               </div>
+             ) : (
+               <div className="space-y-3">
+                 {Array.isArray(granted) ? (
+                   granted.filter(g => g.status === 'active').map((grant) => ( // Show only active grants
+                     <div
+                       key={grant.id}
+                       className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-md border gap-3"
+                       data-testid={`grant-${grant.id}`}
+                     >
+                       <div className="flex items-center gap-3 flex-1 min-w-0">
+                         <Avatar>
+                           <AvatarFallback>
+                             {grant.entity?.fullName.charAt(0).toUpperCase() ?? '?'}
+                           </AvatarFallback>
+                         </Avatar>
+                         <div>
+                           <p className="font-medium text-sm truncate">
+                             {grant.entity?.fullName ?? 'Unknown Entity'}
+                           </p>
+                           <p className="text-xs text-muted-foreground capitalize">
+                             {grant.entity?.role?.replace('_', ' ') ?? grant.entityType}
+                             {grant.entity?.specialty &&
+                               ` - ${grant.entity.specialty}`}
+                             {grant.entity?.organization &&
+                               ` (${grant.entity.organization})`}
+                           </p>
+                           <p className="text-xs text-muted-foreground mt-1">
+                             Permissions Granted:{' '}
+                             <Badge variant="outline" className="ml-1">
+                               {grant.permissions.join(', ')}
+                             </Badge>
+                           </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                Granted On: {new Date(grant.grantedAt).toLocaleDateString()}
+                            </p>
+                         </div>
+                       </div>
+                       <Button
+                         size="sm"
+                         variant="destructive"
+                         onClick={() => handleRevoke(grant.id)}
+                         disabled={revokeMutation.isPending && revokeMutation.variables === grant.id}
+                         data-testid={`revoke-${grant.id}`}
+                       >
+                         {revokeMutation.isPending && revokeMutation.variables === grant.id ? (
+                           <div className="animate-spin w-4 h-4 mr-2" />
+                         ) : (
+                           <X className="w-4 h-4 mr-2" />
+                         )}
+                         Revoke Access
+                       </Button>
+                     </div>
+                   ))
+                 ) : (
+                   <div className="text-center py-12 text-destructive">
+                     <AlertCircle className="w-12 h-12 mx-auto mb-3" />
+                     <p>Error: Could not load granted access properly.</p>
+                   </div>
+                 )}
+               </div>
+             )}
+           </CardContent>
+         </Card>
 
-        <Dialog open={revokeDialogOpen} onOpenChange={setRevokeDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Revoke Access</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to revoke this access permission?
-              </DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-              <div className="flex items-start gap-3 p-4 rounded-md bg-destructive/10 border border-destructive/20">
-                <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">This action will be recorded on the blockchain</p>
-                  <p className="text-xs text-muted-foreground">
-                    The entity will immediately lose access to your health records
-                  </p>
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setRevokeDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleRevoke}
-                disabled={revokeMutation.isPending}
-                data-testid="button-confirm-revoke"
-              >
-                {revokeMutation.isPending ? 'Revoking...' : 'Revoke Access'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </DashboardLayout>
   );
 }
+

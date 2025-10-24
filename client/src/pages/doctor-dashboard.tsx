@@ -1,24 +1,49 @@
 import { useQuery } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/dashboard-layout';
 import { useAuth } from '@/lib/auth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, FileText, ClipboardList, Activity, Search } from 'lucide-react';
+import {
+  Users,
+  FileText,
+  ClipboardList,
+  Activity,
+  Search,
+} from 'lucide-react';
 import { useLocation } from 'wouter';
 import type { Prescription, Record } from '@shared/schema';
+import { api } from '@/lib/api'; // <-- 1. IMPORT THE API CLIENT
 
 export default function DoctorDashboard() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
 
-  const { data: prescriptions, isLoading: prescriptionsLoading } = useQuery<Prescription[]>({
+  // 2. ADDED queryFn TO FETCH DATA
+  const { data: prescriptions, isLoading: prescriptionsLoading } = useQuery<
+    Prescription[]
+  >({
     queryKey: ['/api/prescriptions/my-prescriptions'],
+    queryFn: async () => {
+      const res = await api.get('/prescriptions/my-prescriptions');
+      return res.data;
+    },
   });
 
+  // 3. ADDED queryFn TO FETCH DATA
   const { data: records, isLoading: recordsLoading } = useQuery<Record[]>({
     queryKey: ['/api/records/created-by-me'],
+    queryFn: async () => {
+      const res = await api.get('/records/created-by-me');
+      return res.data;
+    },
   });
 
   const stats = [
@@ -51,9 +76,12 @@ export default function DoctorDashboard() {
     <DashboardLayout>
       <div className="space-y-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Welcome, Dr. {user?.fullName}</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Welcome, Dr. {user?.fullName}
+          </h1>
           <p className="text-muted-foreground mt-2">
-            {user?.username && `Specialty: ${(user as any).specialty || 'General Practice'}`}
+            {user?.username &&
+              `Specialty: ${(user as any).speciality || 'General Practice'}`}
           </p>
         </div>
 
@@ -63,7 +91,9 @@ export default function DoctorDashboard() {
             return (
               <Card key={stat.title}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    {stat.title}
+                  </CardTitle>
                   <div className={`${stat.bg} p-2 rounded-md`}>
                     <Icon className={`w-4 h-4 ${stat.color}`} />
                   </div>
@@ -101,7 +131,9 @@ export default function DoctorDashboard() {
               ) : recentPrescriptions.length === 0 ? (
                 <div className="text-center py-12">
                   <ClipboardList className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
-                  <p className="text-sm text-muted-foreground">No prescriptions yet</p>
+                  <p className="text-sm text-muted-foreground">
+                    No prescriptions yet
+                  </p>
                   <p className="text-xs text-muted-foreground mt-1">
                     Create your first prescription
                   </p>
@@ -116,9 +148,13 @@ export default function DoctorDashboard() {
                       data-testid={`prescription-${prescription.id}`}
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{prescription.diagnosis}</p>
+                        <p className="font-medium text-sm truncate">
+                          {prescription.diagnosis}
+                        </p>
                         <p className="text-xs text-muted-foreground">
-                          {new Date(prescription.createdAt).toLocaleDateString()}
+                          {new Date(
+                            prescription.createdAt,
+                          ).toLocaleDateString()}
                         </p>
                       </div>
                       <Badge
@@ -151,7 +187,7 @@ export default function DoctorDashboard() {
                 data-testid="button-search-patients"
               >
                 <Search className="w-4 h-4" />
-                Search Patients
+                Manage Patients
               </Button>
               <Button
                 className="w-full justify-start gap-2"
@@ -178,7 +214,9 @@ export default function DoctorDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Patient Records Access</CardTitle>
-            <CardDescription>Records you can access based on patient consent</CardDescription>
+            <CardDescription>
+              Records you can access based on patient consent
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {recordsLoading ? (
@@ -190,7 +228,9 @@ export default function DoctorDashboard() {
             ) : records?.length === 0 ? (
               <div className="text-center py-8">
                 <FileText className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
-                <p className="text-sm text-muted-foreground">No accessible records</p>
+                <p className="text-sm text-muted-foreground">
+                  No accessible records
+                </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Patients need to grant you access to their records
                 </p>
@@ -222,3 +262,4 @@ export default function DoctorDashboard() {
     </DashboardLayout>
   );
 }
+

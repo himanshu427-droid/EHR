@@ -5,10 +5,10 @@ import {
   prescriptions,
   labReports,
   insuranceClaims,
-  accessControl,
+  accessControl, // Ensure accessControl is imported
   blockchainAudit,
-} from './db/schema'; // <-- Import all table schemas
-import { eq } from 'drizzle-orm';
+} from './db/schema';
+import { eq, and } from 'drizzle-orm'; // <-- Import 'and' operator
 import type {
   User,
   InsertUser,
@@ -26,7 +26,6 @@ import type {
   InsertBlockchainAudit,
 } from '@shared/schema';
 
-// This interface is great, no changes needed
 export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
@@ -47,7 +46,10 @@ export interface IStorage {
   getPrescriptionsByPatient(patientId: string): Promise<Prescription[]>;
   getPrescriptionsByDoctor(doctorId: string): Promise<Prescription[]>;
   createPrescription(prescription: InsertPrescription): Promise<Prescription>;
-  updatePrescription(id: string, prescription: Partial<Prescription>): Promise<Prescription>;
+  updatePrescription(
+    id: string,
+    prescription: Partial<Prescription>,
+  ): Promise<Prescription>;
 
   // Lab Report operations
   getLabReport(id: string): Promise<LabReport | undefined>;
@@ -67,8 +69,16 @@ export interface IStorage {
   getAccessControl(id: string): Promise<AccessControl | undefined>;
   getAccessByPatient(patientId: string): Promise<AccessControl[]>;
   getAccessByEntity(entityId: string): Promise<AccessControl[]>;
+  // ADDED: Method signature for specific lookup
+  getAccessByPatientAndEntity(
+    patientId: string,
+    entityId: string,
+  ): Promise<AccessControl | undefined>;
   createAccessControl(access: InsertAccessControl): Promise<AccessControl>;
-  updateAccessControl(id: string, access: Partial<AccessControl>): Promise<AccessControl>;
+  updateAccessControl(
+    id: string,
+    access: Partial<AccessControl>,
+  ): Promise<AccessControl>;
 
   // Blockchain Audit operations
   getBlockchainAudit(id: string): Promise<BlockchainAudit | undefined>;
@@ -79,14 +89,17 @@ export interface IStorage {
 
 // Corrected PostgresStorage implementation
 export class PostgresStorage implements IStorage {
-  // User operations (These were already correct)
+  // User operations
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, username));
     return user;
   }
 
@@ -124,42 +137,76 @@ export class PostgresStorage implements IStorage {
   }
 
   async updateRecord(id: string, updates: Partial<Record>): Promise<Record> {
-    const [record] = await db.update(records).set(updates).where(eq(records.id, id)).returning();
+    const [record] = await db
+      .update(records)
+      .set(updates)
+      .where(eq(records.id, id))
+      .returning();
+    if (!record) throw new Error(`Record with id ${id} not found`);
     return record;
   }
 
   // Prescription operations
   async getPrescription(id: string): Promise<Prescription | undefined> {
-    const [prescription] = await db.select().from(prescriptions).where(eq(prescriptions.id, id));
+    const [prescription] = await db
+      .select()
+      .from(prescriptions)
+      .where(eq(prescriptions.id, id));
     return prescription;
   }
 
   async getPrescriptionsByPatient(patientId: string): Promise<Prescription[]> {
-    return db.select().from(prescriptions).where(eq(prescriptions.patientId, patientId));
+    return db
+      .select()
+      .from(prescriptions)
+      .where(eq(prescriptions.patientId, patientId));
   }
 
   async getPrescriptionsByDoctor(doctorId: string): Promise<Prescription[]> {
-    return db.select().from(prescriptions).where(eq(prescriptions.doctorId, doctorId));
+    return db
+      .select()
+      .from(prescriptions)
+      .where(eq(prescriptions.doctorId, doctorId));
   }
 
-  async createPrescription(insertPrescription: InsertPrescription): Promise<Prescription> {
-    const [prescription] = await db.insert(prescriptions).values(insertPrescription).returning();
+  async createPrescription(
+    insertPrescription: InsertPrescription,
+  ): Promise<Prescription> {
+    const [prescription] = await db
+      .insert(prescriptions)
+      .values(insertPrescription)
+      .returning();
     return prescription;
   }
 
-  async updatePrescription(id: string, updates: Partial<Prescription>): Promise<Prescription> {
-    const [prescription] = await db.update(prescriptions).set(updates).where(eq(prescriptions.id, id)).returning();
+  async updatePrescription(
+    id: string,
+    updates: Partial<Prescription>,
+  ): Promise<Prescription> {
+    const [prescription] = await db
+      .update(prescriptions)
+      .set(updates)
+      .where(eq(prescriptions.id, id))
+      .returning();
+    if (!prescription)
+      throw new Error(`Prescription with id ${id} not found`);
     return prescription;
   }
 
   // Lab Report operations
   async getLabReport(id: string): Promise<LabReport | undefined> {
-    const [report] = await db.select().from(labReports).where(eq(labReports.id, id));
+    const [report] = await db
+      .select()
+      .from(labReports)
+      .where(eq(labReports.id, id));
     return report;
   }
 
   async getLabReportsByPatient(patientId: string): Promise<LabReport[]> {
-    return db.select().from(labReports).where(eq(labReports.patientId, patientId));
+    return db
+      .select()
+      .from(labReports)
+      .where(eq(labReports.patientId, patientId));
   }
 
   async getLabReportsByLab(labId: string): Promise<LabReport[]> {
@@ -167,79 +214,166 @@ export class PostgresStorage implements IStorage {
   }
 
   async createLabReport(insertReport: InsertLabReport): Promise<LabReport> {
-    const [report] = await db.insert(labReports).values(insertReport).returning();
+    const [report] = await db
+      .insert(labReports)
+      .values(insertReport)
+      .returning();
     return report;
   }
 
-  async updateLabReport(id: string, updates: Partial<LabReport>): Promise<LabReport> {
-    const [report] = await db.update(labReports).set(updates).where(eq(labReports.id, id)).returning();
+  async updateLabReport(
+    id: string,
+    updates: Partial<LabReport>,
+  ): Promise<LabReport> {
+    const [report] = await db
+      .update(labReports)
+      .set(updates)
+      .where(eq(labReports.id, id))
+      .returning();
+    if (!report) throw new Error(`Lab report with id ${id} not found`);
     return report;
   }
 
   // Insurance Claim operations
   async getInsuranceClaim(id: string): Promise<InsuranceClaim | undefined> {
-    const [claim] = await db.select().from(insuranceClaims).where(eq(insuranceClaims.id, id));
+    const [claim] = await db
+      .select()
+      .from(insuranceClaims)
+      .where(eq(insuranceClaims.id, id));
     return claim;
   }
 
   async getClaimsByPatient(patientId: string): Promise<InsuranceClaim[]> {
-    return db.select().from(insuranceClaims).where(eq(insuranceClaims.patientId, patientId));
+    return db
+      .select()
+      .from(insuranceClaims)
+      .where(eq(insuranceClaims.patientId, patientId));
   }
 
   async getClaimsByInsurance(insuranceId: string): Promise<InsuranceClaim[]> {
-    return db.select().from(insuranceClaims).where(eq(insuranceClaims.insuranceId, insuranceId));
+    return db
+      .select()
+      .from(insuranceClaims)
+      .where(eq(insuranceClaims.insuranceId, insuranceId));
   }
 
-  async createClaim(insertClaim: InsertInsuranceClaim): Promise<InsuranceClaim> {
-    const [claim] = await db.insert(insuranceClaims).values(insertClaim).returning();
+  async createClaim(
+    insertClaim: InsertInsuranceClaim,
+  ): Promise<InsuranceClaim> {
+    const [claim] = await db
+      .insert(insuranceClaims)
+      .values(insertClaim)
+      .returning();
     return claim;
   }
 
-  async updateClaim(id: string, updates: Partial<InsuranceClaim>): Promise<InsuranceClaim> {
-    const [claim] = await db.update(insuranceClaims).set(updates).where(eq(insuranceClaims.id, id)).returning();
+  async updateClaim(
+    id: string,
+    updates: Partial<InsuranceClaim>,
+  ): Promise<InsuranceClaim> {
+    const [claim] = await db
+      .update(insuranceClaims)
+      .set(updates)
+      .where(eq(insuranceClaims.id, id))
+      .returning();
+    if (!claim) throw new Error(`Insurance claim with id ${id} not found`);
     return claim;
   }
 
   // Access Control operations
   async getAccessControl(id: string): Promise<AccessControl | undefined> {
-    const [access] = await db.select().from(accessControl).where(eq(accessControl.id, id));
+    const [access] = await db
+      .select()
+      .from(accessControl)
+      .where(eq(accessControl.id, id));
     return access;
   }
 
   async getAccessByPatient(patientId: string): Promise<AccessControl[]> {
-    return db.select().from(accessControl).where(eq(accessControl.patientId, patientId));
+    return db
+      .select()
+      .from(accessControl)
+      .where(eq(accessControl.patientId, patientId));
   }
 
   async getAccessByEntity(entityId: string): Promise<AccessControl[]> {
-    return db.select().from(accessControl).where(eq(accessControl.entityId, entityId));
+    return db
+      .select()
+      .from(accessControl)
+      .where(eq(accessControl.entityId, entityId));
   }
 
-  async createAccessControl(insertAccess: InsertAccessControl): Promise<AccessControl> {
-    const [access] = await db.insert(accessControl).values(insertAccess).returning();
+  // ADDED: Implementation for specific lookup
+  async getAccessByPatientAndEntity(
+    patientId: string,
+    entityId: string,
+  ): Promise<AccessControl | undefined> {
+    const [access] = await db
+      .select()
+      .from(accessControl)
+      .where(
+        and(
+          eq(accessControl.patientId, patientId),
+          eq(accessControl.entityId, entityId),
+        ),
+      );
+    return access; // Returns the first match or undefined if none
+  }
+
+  async createAccessControl(
+    insertAccess: InsertAccessControl,
+  ): Promise<AccessControl> {
+    const [access] = await db
+      .insert(accessControl)
+      .values(insertAccess)
+      .returning();
     return access;
   }
 
-  async updateAccessControl(id: string, updates: Partial<AccessControl>): Promise<AccessControl> {
-    const [access] = await db.update(accessControl).set(updates).where(eq(accessControl.id, id)).returning();
+  async updateAccessControl(
+    id: string,
+    updates: Partial<AccessControl>,
+  ): Promise<AccessControl> {
+    const [access] = await db
+      .update(accessControl)
+      .set(updates)
+      .where(eq(accessControl.id, id))
+      .returning();
+    // Added error handling
+    if (!access)
+      throw new Error(`Access control record with id ${id} not found`);
     return access;
   }
 
   // Blockchain Audit operations
   async getBlockchainAudit(id: string): Promise<BlockchainAudit | undefined> {
-    const [log] = await db.select().from(blockchainAudit).where(eq(blockchainAudit.id, id));
+    const [log] = await db
+      .select()
+      .from(blockchainAudit)
+      .where(eq(blockchainAudit.id, id));
     return log;
   }
 
   async getAllAuditLogs(): Promise<BlockchainAudit[]> {
-    return db.select().from(blockchainAudit); // You can add ordering here if needed
+    // Optionally add .orderBy(desc(blockchainAudit.timestamp))
+    return db.select().from(blockchainAudit);
   }
 
   async getAuditLogsByEntity(entityId: string): Promise<BlockchainAudit[]> {
-    return db.select().from(blockchainAudit).where(eq(blockchainAudit.entityId, entityId));
+    return db
+      .select()
+      .from(blockchainAudit)
+      .where(eq(blockchainAudit.entityId, entityId));
+    // Optionally add .orderBy(desc(blockchainAudit.timestamp))
   }
 
-  async createAuditLog(insertLog: InsertBlockchainAudit): Promise<BlockchainAudit> {
-    const [log] = await db.insert(blockchainAudit).values(insertLog).returning();
+  async createAuditLog(
+    insertLog: InsertBlockchainAudit,
+  ): Promise<BlockchainAudit> {
+    const [log] = await db
+      .insert(blockchainAudit)
+      .values(insertLog)
+      .returning();
     return log;
   }
 }

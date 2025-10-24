@@ -18,7 +18,7 @@ export default function PatientDashboard() {
   });
 
   const { data: accessControls, isLoading: accessLoading } = useQuery<AccessControl[]>({
-    queryKey: ['/api/access-control/granted'],
+    queryKey: ['/api/access/granted'],
   });
 
   const stats = [

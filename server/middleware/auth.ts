@@ -13,6 +13,9 @@ export interface AuthRequest extends Request {
     email: string;
     role: string;
     fullName: string;
+    speciality: string;
+    organization: string;
+    licenseNumber:string;
   };
 }
 
@@ -32,6 +35,9 @@ export function authenticateToken(req: AuthRequest, res: Response, next: NextFun
       email: decoded.email,
       role: decoded.role,
       fullName: decoded.fullName,
+      speciality: decoded.speciality,
+      organization: decoded.organization,
+      licenseNumber: decoded.licenseNumber
     };
     next();
   } catch (error) {
@@ -45,6 +51,9 @@ export function generateToken(user: {
   email: string;
   role: string;
   fullName: string;
+  specialty?: string | null; // <-- Add this (from DB)
+  organization?: string | null; // <-- Add this (from DB)
+  licenseNumber?: string | null; // <-- Add this (from DB)
 }): string {
   return jwt.sign(
     {
@@ -53,6 +62,10 @@ export function generateToken(user: {
       email: user.email,
       role: user.role,
       fullName: user.fullName,
+      // Add the new fields to the token payload
+      speciality: user.specialty, // <-- Map DB 'specialty' to token 'speciality'
+      organization: user.organization,
+      licenseNumber: user.licenseNumber,
     },
     JWT_SECRET,
     { expiresIn: '7d' }

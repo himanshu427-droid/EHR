@@ -1,13 +1,13 @@
 # MediChain EHR - Decentralized Electronic Health Record System
 
-A complete MERN + Hyperledger Fabric application for managing electronic health records on a permissioned blockchain network.
+A complete full-stack application leveraging TypeScript, React with Vite for the frontend, Node.js/Express for the backend, Drizzle for database interaction + Hyperledger Fabric blockchain layer,  for managing electronic health records on a permissioned blockchain network.
 
 ## 🌐 Tech Stack
 
 - **Frontend**: React + TypeScript + TailwindCSS + Wouter + TanStack Query
 - **Backend**: Node.js + Express + JWT Authentication
 - **Blockchain**: Hyperledger Fabric 2.5
-- **Database**: MongoDB 7
+- **Database**: PostgreSQL (specifically hosted on Neon)
 - **Deployment**: Docker + Docker Compose
 
 ## 👥 User Roles

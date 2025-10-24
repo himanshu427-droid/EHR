@@ -106,7 +106,7 @@ openssl rand -base64 32
 ```env
 NODE_ENV=development
 PORT=5000
-MONGODB_URI=mongodb://localhost:27017/ehr_db
+DATABASE_URL= <your_neondb_connection_string>
 JWT_SECRET=<your-generated-secret-from-above>
 USE_FABRIC=true
 FABRIC_NETWORK_PATH=./server/fabric/network-config.yaml

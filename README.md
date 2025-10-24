@@ -154,41 +154,53 @@ cd ~/fabric-samples/test-network
 
 ```
 / (EHR Project Root)
-├── .env                  # Environment variables (DB URL, etc.)
-├── README.md             # Project documentation
+├── .env                  # Environment variables (DB_URL, JWT_SECRET)
+├── .gitignore
+├── README.md
 ├── chaincode/            # Hyperledger Fabric smart contract
-│   └── ehr_contract.js   # The main smart contract logic
+│   └── ehr_contract.js
 ├── client/               # React frontend application
-│   ├── index.html
-│   └── src/
-│       ├── App.tsx       # Main app component
-│       ├── components/   # Reusable UI components
-│       ├── hooks/        # Custom React hooks
-│       ├── lib/          # Helper functions (api.ts, auth.ts)
-│       ├── main.tsx      # React entry point
-│       └── pages/        # All app pages (login, dashboard, etc.)
+│   ├── index.html        # Entry point HTML
+│   └── src/              # Frontend source code (components, pages, hooks, lib)
+│       ├── App.tsx
+│       ├── main.tsx
+│       └── index.css     # Main CSS file with Tailwind directives
 ├── drizzle.config.ts     # Drizzle ORM configuration
 ├── drizzle/              # Generated database migration files
-│   └── ...
-├── fabric-samples/       # Hyperledger Fabric test network
+├── fabric-samples/       # (Contains Fabric test network setup)
 │   └── test-network/
-│       ├── network.sh    # Script to start/stop the network
-│       └── ...
+├── node_modules/         # Project dependencies
+├── package.json          # Root dependencies and scripts (like npm run dev)
+├── package-lock.json
+├── postcss.config.cjs    # PostCSS configuration (loads Tailwind)
 ├── server/               # Node.js/Express backend API
-│   ├── db/
-│   │   ├── db.ts         # Drizzle client connection
-│   │   └── schema.ts     # Drizzle database table definitions
-│   ├── fabric/
-│   │   └── blockchain.ts # Service for interacting with Fabric
-│   ├── wallet/           # Fabric wallet for storing user certs
-│   ├── index.ts          # Server entry point
-│   ├── routes.ts         # All API routes
-│   └── storage.ts        # Database logic (PostgresStorage class)
+│   ├── db/               # Database related files (connection, schema)
+│   │   ├── db.ts
+│   │   └── schema.ts
+│   ├── fabric/           # Fabric SDK interaction logic
+│   │   └── blockchain.ts
+│   ├── middleware/       # Express middleware (auth.ts)
+│   │   └── auth.ts
+│   ├── routes/           # Individual API route modules
+│   │   ├── access.routes.ts
+│   │   ├── admin.routes.ts
+│   │   ├── auth.routes.ts
+│   │   ├── blockchain.routes.ts
+│   │   ├── insurance.routes.ts
+│   │   ├── lab.routes.ts
+│   │   ├── prescriptions.routes.ts
+│   │   ├── records.routes.ts
+│   │   └── researcher.routes.ts
+│   ├── wallet/           # Fabric wallet storage
+│   ├── index.routes.ts   # Main router file (mounts other routers)
+│   ├── index.ts          # Server entry point (starts Express, integrates Vite)
+│   ├── storage.ts        # Database interaction class (PostgresStorage)
+│   └── vite.ts           # Vite middleware integration for Express
 ├── shared/               # Code shared between frontend and backend
-│   └── schema.ts         # Zod schemas and shared types
-├── package.json          # Project dependencies and scripts
-├── tsconfig.json         # TypeScript configuration
-└── vite.config.ts        # Vite configuration
+│   └── schema.ts         # Zod schemas, shared types, UserRole enum
+├── tailwind.config.ts    # Tailwind CSS configuration
+├── tsconfig.json         # Root TypeScript configuration
+└── vite.config.ts        # Vite configuration (defines client root, aliases, PostCSS)
 ```
 
 

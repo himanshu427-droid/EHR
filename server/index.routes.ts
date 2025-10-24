@@ -1,9 +1,5 @@
 import type { Express} from 'express';
 import { createServer, type Server } from 'http';
-
-
-
-// Import the individual routers
 import authRouter from './routes/auth.routes';
 import recordsRouter from './routes/records.routes';
 import prescriptionsRouter from './routes/prescriptions.routes';
@@ -13,7 +9,6 @@ import accessRouter from './routes/access.routes';
 import adminRouter from './routes/admin.routes';
 import blockchainRouter from './routes/blockchain.routes';
 import researcherRouter from './routes/researcher.routes';
-
 
 
 export async function registerRoutes(app: Express): Promise<Server> {

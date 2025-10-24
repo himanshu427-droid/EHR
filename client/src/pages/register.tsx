@@ -63,11 +63,9 @@ export default function Register() {
       if (!response.ok) {
         let errorMessage = `Registration failed: ${response.statusText}`;
         try {
-          // Try to parse a JSON error message from the backend
           const errorData = await response.json();
           errorMessage = errorData.message || 'Registration failed';
         } catch (e) {
-          // If the response wasn't JSON, stick with the status text
           console.error('Response was not JSON:', e);
         }
         throw new Error(errorMessage);

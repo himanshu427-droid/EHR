@@ -20,13 +20,12 @@ import {
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import type { Prescription, Record } from '@shared/schema';
-import { api } from '@/lib/api'; // <-- 1. IMPORT THE API CLIENT
+import { api } from '@/lib/api'; 
 
 export default function DoctorDashboard() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
 
-  // 2. ADDED queryFn TO FETCH DATA
   const { data: prescriptions, isLoading: prescriptionsLoading } = useQuery<
     Prescription[]
   >({
@@ -37,7 +36,6 @@ export default function DoctorDashboard() {
     },
   });
 
-  // 3. ADDED queryFn TO FETCH DATA
   const { data: records, isLoading: recordsLoading } = useQuery<Record[]>({
     queryKey: ['/api/records/created-by-me'],
     queryFn: async () => {

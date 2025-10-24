@@ -1,27 +1,26 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { storage } from '../storage'; // Adjust path as needed
-import { blockchainService } from '../fabric/blockchain'; // Adjust path
-import { authenticateToken, generateToken, type AuthRequest } from '../middleware/auth'; // Adjust path
+import { storage } from '../storage'; 
+import { blockchainService } from '../fabric/blockchain'; 
+import { authenticateToken, generateToken, type AuthRequest } from '../middleware/auth'; 
 import { UserRole} from '../../shared/schema';
 import type {  Response, NextFunction } from 'express';
 import { randomUUID } from 'crypto';
 
-// --- Zod Schemas for Input Validation ---
+
 const grantAccessSchema = z.object({
-  entityId: z.string().uuid('Invalid Entity ID'), // e.g., a doctor's user ID
-  entityType: z.string().min(1, 'Entity type is required'), // e.g., 'doctor'
+  entityId: z.string().uuid('Invalid Entity ID'), 
+  entityType: z.string().min(1, 'Entity type is required'), 
   permissions: z
     .array(z.string())
     .min(1, 'At least one permission is required'),
-  patientId: z.string().uuid().optional(), // Optional, defaults to self
+  patientId: z.string().uuid().optional(), 
 });
 
 const revokeAccessSchema = z.object({
   id: z.string().uuid('Invalid Access Control ID'),
 });
 
-// --- NEW SCHEMAS FOR Doctor/Patient Access Routes ---
 const findPatientSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters'),
 });
@@ -35,7 +34,6 @@ const approveAccessSchema = z.object({
 });
 
 
-// --- Role-Based Access Control (RBAC) Middleware ---
 const requireRole = (role: string | string[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
     const roles = Array.isArray(role) ? role : [role];
@@ -47,8 +45,6 @@ const requireRole = (role: string | string[]) => {
     next();
   };
 };
-
-// -------------------------- //
 
 
 const router = Router();
@@ -62,21 +58,20 @@ const router = Router();
         const accessControls = await storage.getAccessByPatient(
           req.user!.userId,
         );
-        // IMPROVED: Join with User data for entity details here
         const detailedAccess = await Promise.all(
           accessControls.map(async (ac) => {
             const entityUser = await storage.getUser(ac.entityId);
             return {
               ...ac,
               entity: entityUser
-                ? { // Only include necessary, non-sensitive fields
+                ? {
                     id: entityUser.id,
                     fullName: entityUser.fullName,
                     role: entityUser.role,
                     specialty: entityUser.specialty,
                     organization: entityUser.organization,
                   }
-                : { // Provide a fallback structure
+                : { 
                     id: ac.entityId,
                     fullName: 'Unknown Entity',
                     role: ac.entityType,
@@ -94,7 +89,7 @@ const router = Router();
     },
   );
 
-  // --- PATIENT: Proactively GRANT access ---
+
   router.post(
     '/grant',
     authenticateToken,
@@ -109,7 +104,7 @@ const router = Router();
           entityId,
           entityType,
           permissions,
-          status: 'active', // Granted immediately
+          status: 'active', 
         };
 
         if (accessData.patientId !== req.user!.userId) {
@@ -118,38 +113,35 @@ const router = Router();
             .json({ message: 'You can only grant access to your own records' });
         }
 
-        // Check if entity exists
+       
         const entityUser = await storage.getUser(entityId);
         if (!entityUser) {
            return res.status(404).json({ message: 'Entity not found' });
         }
-        // Optional strict check: Ensure entityType matches entityUser.role
+      
         if (entityUser.role !== entityType) {
            return res.status(400).json({ message: 'Entity type mismatch' });
         }
 
-        // Check if grant already exists (pending, active, or revoked)
-        // Requires getAccessByPatientAndEntity method in storage
+       
         const existing = await storage.getAccessByPatientAndEntity(accessData.patientId, entityId);
         if (existing && existing.status === 'active') {
              return res.status(400).json({ message: 'Access already granted to this entity' });
         }
 
-        // Submit grant to blockchain
+        
         const txId = await blockchainService.submitTransaction(
           'grantAccess',
           accessData.patientId,
           entityId,
-          JSON.stringify(permissions), // Pass permissions as JSON string
+          JSON.stringify(permissions),
         );
 
-        // Create or Update DB record
         let access;
         if(existing && existing.status !== 'active'){
-            // Update revoked/pending grant to active
             access = await storage.updateAccessControl(existing.id, {
                 status: 'active',
-                permissions: permissions, // Update permissions if changed
+                permissions: permissions, 
                 grantedAt: new Date(),
                 revokedAt: null,
                 blockchainTxId: txId,
@@ -167,7 +159,7 @@ const router = Router();
           operation: 'grantAccess',
           entityId: access.id,
           entityType: 'access_control',
-          dataHash: blockchainService.hashData(accessData), // Hash intended data
+          dataHash: blockchainService.hashData(accessData), 
           metadata: { patientId: accessData.patientId, entityId, entityType },
         });
 
@@ -184,7 +176,6 @@ const router = Router();
     },
   );
 
-  // --- PATIENT: REVOKE access ---
   router.post(
     '/revoke',
     authenticateToken,
@@ -192,8 +183,7 @@ const router = Router();
     async (req: AuthRequest, res) => {
       try {
         const validatedData = revokeAccessSchema.parse(req.body);
-        const { id } = validatedData; // ID of the access_control record
-
+        const { id } = validatedData; 
         const access = await storage.getAccessControl(id);
         if (!access) {
           return res
@@ -211,17 +201,16 @@ const router = Router();
              return res.status(400).json({ message: 'Access is already revoked' });
         }
 
-        // Submit revoke to blockchain
         const txId = await blockchainService.submitTransaction(
           'revokeAccess',
-          access.id, // CORRECTED: Pass the access control ID to revoke
+          access.id, 
         );
 
-        // Update DB record
+        
         const updatedAccess = await storage.updateAccessControl(id, {
           status: 'revoked',
           revokedAt: new Date(),
-          blockchainTxId: txId, // Update TxID on revoke
+          blockchainTxId: txId, 
         });
 
         await storage.createAuditLog({
@@ -260,7 +249,6 @@ const router = Router();
           return res.status(404).json({ message: 'Patient not found' });
         }
 
-        // Return non-sensitive info
         res.json({
           id: user.id,
           fullName: user.fullName,
@@ -280,7 +268,6 @@ const router = Router();
 
   
 
-  // --- DOCTOR: Request access from a patient ---
 router.post(
     '/request',
     authenticateToken,
@@ -293,61 +280,54 @@ router.post(
 
         console.log(`Received access request from Doctor ${doctorId} for Patient ${patientId}`);
 
-        // 1. Check if patient exists
         const patientUser = await storage.getUser(patientId);
         if (!patientUser || patientUser.role !== UserRole.PATIENT) {
             console.log(`Patient ${patientId} not found or not a patient.`);
             return res.status(404).json({ message: 'Patient not found' });
         }
 
-        // 2. Check if a request already exists (pending, active, or revoked)
-        // REQUIRES getAccessByPatientAndEntity in storage.ts
+
         const existingAccess = await storage.getAccessByPatientAndEntity(
           patientId,
           doctorId,
         );
 
-        let accessRecord; // To hold the final record (new or updated)
+        let accessRecord; 
 
         if (existingAccess) {
           console.log(`Existing access record found with status: ${existingAccess.status}`);
-          // --- HANDLE EXISTING RECORD ---
           if (existingAccess.status === 'pending' || existingAccess.status === 'active') {
-            // If already pending or active, prevent new request
             console.log('Request denied: Status is already pending or active.');
             return res
               .status(400)
               .json({ message: `Request status for this patient is already '${existingAccess.status}'` });
           } else if (existingAccess.status === 'revoked') {
-            // If revoked, reactivate the request by setting it back to pending
+           
             console.log('Reactivating revoked request to pending...');
             accessRecord = await storage.updateAccessControl(existingAccess.id, {
               status: 'pending',
-              revokedAt: null,         // Clear revocation timestamp
-              blockchainTxId: null,  // Clear old blockchain TxID from grant/revoke
-              grantedAt: new Date(),   // Update timestamp to reflect new request time
-              // Keep original permissions or reset to default? Resetting is safer:
+              revokedAt: null,         
+              blockchainTxId: null,  
+              grantedAt: new Date(),   
               permissions: ['view_records', 'view_prescriptions'],
             });
             console.log('Updated existing record:', accessRecord);
-            res.status(200).json(accessRecord); // Use 200 OK for update
-            return; // Exit after handling update
+            res.status(200).json(accessRecord);
+            return; 
           }
         } else {
-          // --- CREATE NEW PENDING RECORD ---
           console.log('No existing record found. Creating new pending request...');
           const accessData = {
             patientId,
             entityId: doctorId,
             entityType: UserRole.DOCTOR,
-            permissions: ['view_records', 'view_prescriptions'], // Default permissions requested
+            permissions: ['view_records', 'view_prescriptions'], 
             status: 'pending',
-            // grantedAt will be set on creation by DB default or by storage method
           };
           accessRecord = await storage.createAccessControl(accessData);
           console.log('Created new access record:', accessRecord);
-          res.status(201).json(accessRecord); // Use 201 Created for new record
-          return; // Exit after handling creation
+          res.status(201).json(accessRecord); 
+          return;
         }
 
       } catch (error: any) {
@@ -361,29 +341,28 @@ router.post(
       }
     },
   );
-  // --- DOCTOR: Get list of their patients (with access status) ---
+  
   router.get(
     '/my-patients',
     authenticateToken,
     requireRole(UserRole.DOCTOR),
     async (req: AuthRequest, res: Response) => {
       try {
-        // 1. Get all access records where the entityId is the current doctor
+       
         const accessRecords = await storage.getAccessByEntity(req.user!.userId);
 
-        // 2. Get the patient user details for each access record
         const patientDataPromises = accessRecords.map(async (access) => {
           const patient = await storage.getUser(access.patientId);
-          if (!patient) return null; // Handle case where patient might not exist
+          if (!patient) return null; 
           return {
-            id: patient.id, // Patient's User ID
+            id: patient.id, 
             fullName: patient.fullName,
             username: patient.username,
-            accessStatus: access.status as 'active' | 'pending' | 'revoked', // Assert type
-            accessId: access.id, // ID of the access_control record itself
+            accessStatus: access.status as 'active' | 'pending' | 'revoked', 
+            accessId: access.id, 
           };
         });
-        const patientsWithAccess = (await Promise.all(patientDataPromises)).filter(p => p !== null); // Filter out nulls
+        const patientsWithAccess = (await Promise.all(patientDataPromises)).filter(p => p !== null); 
 
         res.json(patientsWithAccess);
       } catch (error: any) {
@@ -394,56 +373,49 @@ router.post(
   );
 
 
-  // --- PATIENT: Get list of pending access requests ---
   router.get(
     '/pending-requests',
     authenticateToken,
-    requireRole(UserRole.PATIENT), // Ensure only patients can access this
+    requireRole(UserRole.PATIENT), 
     async (req: AuthRequest, res: Response) => {
       try {
         console.log('Received /api/access/pending-requests request');
-        // 1. Get all access records for the currently logged-in patient
         const accessRecords = await storage.getAccessByPatient(
           req.user!.userId,
         );
 
-        // 2. Filter only the records with 'pending' status
         const pendingRecords = accessRecords.filter(
           (a) => a.status === 'pending',
         );
         console.log(`Found ${pendingRecords.length} pending records.`);
 
-        // 3. Get the entity (doctor/lab/etc.) user details for each pending record
         const entityDataPromises = pendingRecords.map(async (access) => {
           const entity = await storage.getUser(access.entityId);
           if (!entity) {
             console.warn(`Entity user not found for access record ID: ${access.id}, Entity ID: ${access.entityId}`);
-            return null; // Handle case where entity user might have been deleted
+            return null;
           }
-          // Construct the response object for this request
           return {
-            accessId: access.id, // The ID of the access_control record itself
+            accessId: access.id, 
             entity: {
               id: entity.id,
               fullName: entity.fullName,
               organization: entity.organization || null,
               specialty: entity.specialty || null,
-              role: entity.role as UserRole, // Assert type from DB
+              role: entity.role as UserRole,
             },
-            permissions: access.permissions, // Permissions requested
-            status: access.status as 'pending', // Assert type
-            // You could optionally include access.grantedAt (which would be the request time)
-            // grantedAt: access.grantedAt
+            permissions: access.permissions, 
+            status: access.status as 'pending', 
+           
           };
         });
 
-        // 4. Wait for all entity details to be fetched and filter out any nulls
+        
         const pendingRequests = (await Promise.all(entityDataPromises)).filter(
           (r) => r !== null,
         );
         console.log(`Returning ${pendingRequests.length} detailed pending requests.`);
 
-        // 5. Send the enriched list as JSON response
         res.json(pendingRequests);
 
       } catch (error: any) {
@@ -462,10 +434,9 @@ router.post(
       try {
         console.log('Received /api/access/approve request');
         const validatedData = approveAccessSchema.parse(req.body);
-        const { accessId } = validatedData; // You already have the ID here
+        const { accessId } = validatedData; 
         console.log('Parsed accessId:', accessId);
 
-        // 1. Get the access record
         const access = await storage.getAccessControl(accessId);
         console.log('Found access record:', access);
         if (!access) {
@@ -473,41 +444,36 @@ router.post(
           return res.status(404).json({ message: 'Request not found' });
         }
 
-        // 2. Security Check: Ownership
         console.log(`Checking ownership: Record patientId=${access.patientId}, Requesting userId=${req.user!.userId}`);
         if (access.patientId !== req.user!.userId) {
           console.log('Ownership check failed');
           return res.status(403).json({ message: 'You cannot approve this request' });
         }
 
-        // 3. Security Check: Status
         console.log('Checking status:', access.status);
         if (access.status !== 'pending') {
           console.log('Status check failed');
           return res.status(400).json({ message: 'This request is not pending or already handled' });
         }
 
-        // 4. Submit grant to Blockchain - ADD accessId HERE
         console.log('Submitting grantAccess to blockchain with accessId:', accessId);
         const blockchainResultPayload = await blockchainService.submitTransaction(
           'grantAccess',
-          accessId,             // <-- PASS THE CORRECT accessId HERE
+          accessId,            
           access.patientId,
           access.entityId,
           JSON.stringify(access.permissions),
         );
         console.log('Blockchain transaction successful, result payload:', blockchainResultPayload);
 
-        // 5. Update the DB record to 'active'
+    
         console.log('Updating DB record to active...');
         const updatedAccess = await storage.updateAccessControl(accessId, {
           status: 'active',
-          // blockchainTxId: txId,
           grantedAt: new Date(),
         });
         console.log('DB record updated:', updatedAccess);
 
-        // 6. Create audit log (Ensure placeholder is filled)
         console.log('Creating audit log...');
         const auditLogTxId = randomUUID();
          await storage.createAuditLog({
@@ -535,7 +501,6 @@ router.post(
         if (error instanceof z.ZodError) {
           return res.status(400).json({ message: 'Invalid data', errors: error.errors });
         }
-        // Add specific check for Fabric errors if needed
         res.status(500).json({ message: 'Failed to approve access' });
       }
     },

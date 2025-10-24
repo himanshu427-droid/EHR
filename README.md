@@ -231,10 +231,6 @@ cd ~/fabric-samples/test-network
 - Check peer addresses are accessible
 - Ensure wallet directory has proper permissions
 
-### MongoDB connection issues
-- Verify MongoDB is running: `docker ps | grep mongo`
-- Check connection string in environment variables
-- Test connection: `mongosh mongodb://admin:password123@localhost:27017`
 
 ## 📞 Support
 

@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import type { User, UserRoleType } from '@shared/schema';
+import { queryClient } from './queryClient';
 
 interface DecodedToken {
   userId: string;
@@ -51,6 +52,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('auth_token');
     setToken(null);
     setUser(null);
+    queryClient.removeQueries();
+
   };
 
   return (

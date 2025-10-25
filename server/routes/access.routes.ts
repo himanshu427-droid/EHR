@@ -372,6 +372,29 @@ router.post(
     },
   );
 
+  router.get('/patient/:patientId/records', authenticateToken, 
+    requireRole([UserRole.DOCTOR, UserRole.LAB, UserRole.HOSPITAL_ADMIN]), 
+    async (req:AuthRequest, res: Response)=>{
+      try {
+        const {patientId} = req.params;
+        const requestingEntityId = req.user!.userId;
+        const accessGrant = await storage.getAccessByPatientAndEntity(patientId, requestingEntityId);
+
+        if(!accessGrant || accessGrant.status != 'active'){
+          console.log(`Access denied for ${requestingEntityId} to view records of ${patientId}. Status: ${accessGrant?.status}`);
+          return res.status(403).json("Access denied: You don't have this permission!");
+        }
+
+        const patientRecords = await storage.getRecordsByPatient(patientId)
+        res.json(patientRecords)
+
+      } catch (error) {
+        console.error(`Error fetching records for patient ${req.params.patientId}:`, error);
+       res.status(500).json({ message: 'Failed to fetch patient records' });
+      }
+    }
+  );
+
 
   router.get(
     '/pending-requests',

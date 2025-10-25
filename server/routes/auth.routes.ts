@@ -4,10 +4,13 @@ import { z } from 'zod';
 import { storage } from '../storage'; // Adjust path as needed
 import { blockchainService } from '../fabric/blockchain'; // Adjust path
 import { authenticateToken, generateToken, type AuthRequest } from '../middleware/auth'; // Adjust path
-import { loginSchema, registerSchema, UserRole, type RegisterRequest} from '../../shared/schema';
+import { loginSchema, registerSchema, UserRole, type RegisterRequest, type User} from '../../shared/schema';
+
+const userIdParamSchema = z.object({
+  id: z.string().uuid('Invalid User ID format'),
+});
 
 const router = Router();
-
 
  router.post('/register', async (req, res) => {
     try {
@@ -113,5 +116,38 @@ const router = Router();
       licenseNumber: req.user.licenseNumber, 
     });
   });
+
+  
+router.get(
+  '/users/:id', 
+  authenticateToken, 
+  async (req: AuthRequest, res) => {
+    try {
+      const { id } = userIdParamSchema.parse(req.params);
+      console.log(`Fetching user details for ID: ${id}`);
+
+      const user = await storage.getUser(id);
+
+      if (!user) {
+        console.log(`User ${id} not found.`);
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      const { password, ...userWithoutPassword } = user;
+
+      console.log(`Returning details for user ${id}`);
+      res.json(userWithoutPassword);
+
+    } catch (error: any) {
+      console.error(`Error fetching user ${req.params.id}:`, error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid User ID format', errors: error.errors });
+      }
+      res.status(500).json({ message: 'Failed to fetch user details' });
+    }
+  }
+);
+
+
 
 export default router;

@@ -297,13 +297,14 @@ export class PostgresStorage implements IStorage {
   }
 
   async getAccessByEntity(entityId: string): Promise<AccessControl[]> {
+    console.log('Storage: Querying accessControl table for entityId:', entityId);
     return db
       .select()
       .from(accessControl)
       .where(eq(accessControl.entityId, entityId));
   }
 
-  // ADDED: Implementation for specific lookup
+  
   async getAccessByPatientAndEntity(
     patientId: string,
     entityId: string,

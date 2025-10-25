@@ -12,6 +12,7 @@ import Records from '@/pages/records';
 import Consent from '@/pages/consent';
 import Blockchain from '@/pages/blockchain';
 import PatientsPage from './pages/patients';
+import PatientRecordsPage from './pages/patient-records';
 
 function ProtectedRoute({ component: Component }: { component: () => JSX.Element }) {
   const { isAuthenticated } = useAuth();
@@ -43,6 +44,7 @@ function Router() {
       <Route path="/consent" component={() => <ProtectedRoute component={Consent} />} />
       <Route path="/blockchain" component={() => <ProtectedRoute component={Blockchain} />} />
       <Route path="/patients" component={()=>< ProtectedRoute component={PatientsPage}/>} />
+      <Route path="/patient/:patientId/records" component={()=><ProtectedRoute component={PatientRecordsPage}/>} />
       <Route path="/" component={() => <Redirect to="/dashboard" />} />
       <Route component={NotFound} />
     </Switch>

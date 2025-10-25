@@ -214,31 +214,4 @@ cd ~/fabric-samples/test-network
 - **Permission-based access control**
 
 
-## 🆘 Troubleshooting
 
-### Fabric network won't start
-- Ensure Docker is running: `docker ps`
-- Check port conflicts: `lsof -i :7050,7051,9051`
-- Clean up old containers: `docker system prune -a`
-
-### Chaincode deployment fails
-- Verify Node.js version in chaincode: `node --version`
-- Check chaincode syntax: `cd chaincode && npm install`
-- Review peer logs: `docker logs peer0.org1.example.com`
-
-### Backend can't connect to Fabric
-- Verify network-config.yaml paths
-- Check peer addresses are accessible
-- Ensure wallet directory has proper permissions
-
-
-## 📞 Support
-
-For issues specific to:
-- **Hyperledger Fabric**: [Fabric Documentation](https://hyperledger-fabric.readthedocs.io/)
-- **Docker**: [Docker Documentation](https://docs.docker.com/)
-- **This Project**: Open an issue in the repository
-
----
-
-Built with ❤️ for decentralized healthcare

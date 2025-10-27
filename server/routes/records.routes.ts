@@ -149,6 +149,14 @@ router.post(
            return res.status(404).json({ message: 'Patient not found' });
       }
 
+      const accessGrant = await storage.getAccessByPatientAndEntity(patientId, creatorId);
+
+      if (!accessGrant || accessGrant.status !== 'active') {
+          console.log(`Access DENIED for Creator ${creatorId} to Patient ${patientId}. Grant status: ${accessGrant?.status ?? 'none'}`);
+          // Return 403 Forbidden if no active grant exists
+          return res.status(403).json({ message: 'Access denied: You do not have active permission to create records for this patient.' });
+      }
+
       // Construct the data to be saved in the database
       const recordData = {
         title: recordType === 'prescription' ? (title || diagnosis!) : title!,

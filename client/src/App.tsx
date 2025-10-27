@@ -37,6 +37,7 @@ function PublicRoute({ component: Component }: { component: () => JSX.Element })
   return <Component />;
 }
 
+
 function Router() {
   return (
     <Switch>

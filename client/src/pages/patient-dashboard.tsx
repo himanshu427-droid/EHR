@@ -81,7 +81,7 @@ export default function PatientDashboard() {
                 <CardTitle>Recent Health Records</CardTitle>
                 <CardDescription>Your latest medical records</CardDescription>
               </div>
-              <Button size="sm" onClick={() => setLocation('/records')} data-testid="button-view-all-records">
+              <Button size="sm" onClick={() => setLocation('/my-records')} data-testid="button-view-all-records">
                 View All
               </Button>
             </CardHeader>
@@ -106,7 +106,7 @@ export default function PatientDashboard() {
                     <div
                       key={record.id}
                       className="flex items-center justify-between p-3 rounded-md border hover-elevate active-elevate-2 cursor-pointer"
-                      onClick={() => setLocation('/records')}
+                      onClick={() => setLocation('/my-records')}
                       data-testid={`record-${record.id}`}
                     >
                       <div className="flex-1 min-w-0">
@@ -134,7 +134,7 @@ export default function PatientDashboard() {
               <Button
                 className="w-full justify-start gap-2"
                 variant="outline"
-                onClick={() => setLocation('/records')}
+                onClick={() => setLocation('/my-records')}
                 data-testid="button-view-records"
               >
                 <FileText className="w-4 h-4" />

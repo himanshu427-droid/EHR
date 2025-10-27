@@ -5,7 +5,6 @@ import { z } from "zod";
 import {
   users,
   records,
-  prescriptions,
   labReports,
   insuranceClaims,
   accessControl,
@@ -23,17 +22,21 @@ export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
 });
 
-export const insertRecordSchema = createInsertSchema(records).omit({
+export const insertRecordSchema = createInsertSchema(records, {
+    // Define specific Zod types for JSON columns if desired for stricter validation
+    medications: z.array(z.object({
+        name: z.string().min(1),
+        dosage: z.string().min(1),
+        frequency: z.string().min(1),
+        duration: z.string().min(1),
+    })).optional().nullable(), // Make optional and nullable
+    diagnosis: z.string().optional().nullable(), // Make optional and nullable
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
 
-export const insertPrescriptionSchema = createInsertSchema(prescriptions).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
 
 export const insertLabReportSchema = createInsertSchema(labReports).omit({
   id: true,
@@ -63,8 +66,6 @@ export type User = typeof users.$inferSelect;
 export type InsertRecord = z.infer<typeof insertRecordSchema>;
 export type Record = typeof records.$inferSelect;
 
-export type InsertPrescription = z.infer<typeof insertPrescriptionSchema>;
-export type Prescription = typeof prescriptions.$inferSelect;
 
 export type InsertLabReport = z.infer<typeof insertLabReportSchema>;
 export type LabReport = typeof labReports.$inferSelect;

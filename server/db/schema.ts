@@ -1,5 +1,6 @@
 // root/server/db/schema.ts
 import { sql } from "drizzle-orm";
+import { foreignKey } from "drizzle-orm/mysql-core";
 import { pgTable, text, varchar, timestamp, jsonb, boolean } from "drizzle-orm/pg-core";
 
 // User roles enum (can live here or in shared, but here is fine)
@@ -43,23 +44,26 @@ export const records = pgTable("records", {
   fileName: text("file_name"),
   blockchainTxId: text("blockchain_tx_id"),
   status: text("status").notNull().default("active"),
+  medications: jsonb("medications"), // array of {name, dosage, frequency, duration} - Nullable
+  diagnosis: text("diagnosis"),   // Nullable
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+
 });
 
-// Prescriptions table
-export const prescriptions = pgTable("prescriptions", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  patientId: varchar("patient_id").notNull(),
-  doctorId: varchar("doctor_id").notNull(),
-  medications: jsonb("medications").notNull(),
-  diagnosis: text("diagnosis").notNull(),
-  notes: text("notes"),
-  blockchainTxId: text("blockchain_tx_id"),
-  status: text("status").notNull().default("active"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+// // Prescriptions table
+// export const prescriptions = pgTable("prescriptions", {
+//   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+//   patientId: varchar("patient_id").notNull(),
+//   doctorId: varchar("doctor_id").notNull(),
+//   medications: jsonb("medications").notNull(),
+//   diagnosis: text("diagnosis").notNull(),
+//   notes: text("notes"),
+//   blockchainTxId: text("blockchain_tx_id"),
+//   status: text("status").notNull().default("active"),
+//   createdAt: timestamp("created_at").defaultNow().notNull(),
+//   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+// });
 
 // Lab Reports table
 export const labReports = pgTable("lab_reports", {

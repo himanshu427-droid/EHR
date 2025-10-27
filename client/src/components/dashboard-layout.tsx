@@ -87,7 +87,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
     if (user.role === UserRole.PATIENT) {
       items.push(
-        { label: 'My Records', icon: FileText, path: '/records' },
+        { label: 'My Records', icon: FileText, path: '/my-records' },
         { label: 'Consent Management', icon: ShieldCheck, path: '/consent' }
       );
     }
@@ -95,7 +95,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     if (user.role === UserRole.DOCTOR) {
       items.push(
         { label: 'Patients', icon: Users, path: '/patients' },
-        { label: 'Prescriptions', icon: ClipboardList, path: '/prescriptions' }
+        { label: 'Prescriptions', icon: ClipboardList, path: '/records?type=prescription' }
       );
     }
 
@@ -118,7 +118,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       items.push({ label: 'Datasets', icon: FileStack, path: '/datasets' });
     }
 
-    items.push({ label: 'Blockchain Verify', icon: ShieldCheck, path: '/blockchain' });
+    // items.push({ label: 'Blockchain Verify', icon: ShieldCheck, path: '/blockchain' });
 
     return items;
   };

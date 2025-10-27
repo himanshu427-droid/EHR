@@ -25,6 +25,10 @@ const findPatientSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters'),
 });
 
+const findPatientQuerySchema = z.object({
+  query: z.string().min(2, 'Search term must be at least 2 characters').optional(), // Make optional initially? Or require?
+});
+
 const requestAccessSchema = z.object({
   patientId: z.string().uuid('Invalid Patient ID'),
 });
@@ -236,37 +240,43 @@ const router = Router();
   );
 
 
-  router.post(
-    '/find-patients',
+ router.get(
+    '/find-patient',
     authenticateToken,
-    requireRole(UserRole.DOCTOR),
-    async (req: AuthRequest, res: Response) => {
-      try {
-        const validatedData = findPatientSchema.parse(req.body);
-        const user = await storage.getUserByUsername(validatedData.username);
+    requireRole(UserRole.DOCTOR), // Or any role that can search
+    async (req: AuthRequest, res) => {
+        try {
+            // Validate the query parameter
+            const { query } = findPatientQuerySchema.parse(req.query);
 
-        if (!user || user.role !== UserRole.PATIENT) {
-          return res.status(404).json({ message: 'Patient not found' });
-        }
+            if (!query) {
+                // Return empty array if no query provided
+                return res.json([]);
+            }
 
-        res.json({
-          id: user.id,
-          fullName: user.fullName,
-          username: user.username,
-        });
-      } catch (error: any) {
-        console.error('Find patient error:', error);
-        if (error instanceof z.ZodError) {
-          return res
-            .status(400)
-            .json({ message: 'Invalid search query', errors: error.errors });
+            console.log(`Searching for patients matching: ${query}`);
+            const matchingPatients = await storage.findPatientsByNameOrUsername(query);
+
+            // Return only necessary, non-sensitive fields
+            const results = matchingPatients.map(user => ({
+                id: user.id,
+                fullName: user.fullName,
+                username: user.username,
+            }));
+
+            console.log(`Found ${results.length} patients.`);
+            res.json(results); // Always return an array
+
+        } catch (error: any) {
+            console.error('Find patient error:', error);
+            if (error instanceof z.ZodError) {
+                // Handle validation error for the query param
+                return res.status(400).json({ message: 'Invalid search query', errors: error.errors });
+            }
+            res.status(500).json({ message: 'Error finding patients' });
         }
-        res.status(500).json({ message: 'Error finding patient' });
-      }
     },
-  );
-
-  
+);
 
 router.post(
     '/request',

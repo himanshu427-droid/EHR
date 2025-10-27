@@ -2,11 +2,11 @@
 import { defineConfig } from 'drizzle-kit';
 
 export default defineConfig({
-  dialect: 'postgresql', // 👈 This tells Drizzle it's Postgres
-  schema: './server/db/schema.ts', // 👈 Point to your schema.ts file
-  out: './drizzle', // 👈 Where to put migration files
+  dialect: 'postgresql', 
+  schema: './server/db/schema.ts', 
+  out: './drizzle', 
   dbCredentials: {
-    url: process.env.DATABASE_URL!, // 👈 Your Neon connection string
+    url: process.env.DATABASE_URL!, 
   },
   verbose: true,
   strict: true,

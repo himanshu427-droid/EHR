@@ -71,3 +71,15 @@ export function generateToken(user: {
     { expiresIn: '7d' }
   );
 }
+
+export const requireRole = (role: string | string[]) => {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
+    const roles = Array.isArray(role) ? role : [role];
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res
+        .status(403)
+        .json({ message: 'Access denied: Insufficient permissions' });
+    }
+    next();
+  };
+};

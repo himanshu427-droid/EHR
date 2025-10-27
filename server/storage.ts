@@ -2,20 +2,18 @@ import { db } from './db/db';
 import {
   users,
   records,
-  prescriptions,
   labReports,
   insuranceClaims,
   accessControl, // Ensure accessControl is imported
   blockchainAudit,
+  UserRole,
 } from './db/schema';
-import { eq, and } from 'drizzle-orm'; // <-- Import 'and' operator
+import { eq, and, or, ilike } from 'drizzle-orm'; // <-- Import 'and' operator
 import type {
   User,
   InsertUser,
   Record,
   InsertRecord,
-  Prescription,
-  InsertPrescription,
   LabReport,
   InsertLabReport,
   InsuranceClaim,
@@ -33,6 +31,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
+  findPatientsByNameOrUsername(term: string): Promise<User[]>;
 
   // Record operations
   getRecord(id: string): Promise<Record | undefined>;
@@ -42,14 +41,6 @@ export interface IStorage {
   updateRecord(id: string, record: Partial<Record>): Promise<Record>;
 
   // Prescription operations
-  getPrescription(id: string): Promise<Prescription | undefined>;
-  getPrescriptionsByPatient(patientId: string): Promise<Prescription[]>;
-  getPrescriptionsByDoctor(doctorId: string): Promise<Prescription[]>;
-  createPrescription(prescription: InsertPrescription): Promise<Prescription>;
-  updatePrescription(
-    id: string,
-    prescription: Partial<Prescription>,
-  ): Promise<Prescription>;
 
   // Lab Report operations
   getLabReport(id: string): Promise<LabReport | undefined>;
@@ -117,6 +108,26 @@ export class PostgresStorage implements IStorage {
     return db.select().from(users);
   }
 
+  async findPatientsByNameOrUsername(term: string): Promise<User[]> {
+        if (!term || term.length < 2) { // Basic validation
+            return [];
+        }
+        const searchTerm = `%${term}%`; // Add wildcards for partial matching
+        const foundUsers = await db.select()
+            .from(users)
+            .where(
+                and(
+                    eq(users.role, UserRole.PATIENT), // Only find users who are patients
+                    or( // Match username OR fullName (case-insensitive)
+                        ilike(users.username, searchTerm),
+                        ilike(users.fullName, searchTerm)
+                    )
+                )
+            )
+            .limit(10); // Limit results for performance/UI
+        return foundUsers;
+    }
+
   // Record operations
   async getRecord(id: string): Promise<Record | undefined> {
     const [record] = await db.select().from(records).where(eq(records.id, id));
@@ -146,52 +157,6 @@ export class PostgresStorage implements IStorage {
     return record;
   }
 
-  // Prescription operations
-  async getPrescription(id: string): Promise<Prescription | undefined> {
-    const [prescription] = await db
-      .select()
-      .from(prescriptions)
-      .where(eq(prescriptions.id, id));
-    return prescription;
-  }
-
-  async getPrescriptionsByPatient(patientId: string): Promise<Prescription[]> {
-    return db
-      .select()
-      .from(prescriptions)
-      .where(eq(prescriptions.patientId, patientId));
-  }
-
-  async getPrescriptionsByDoctor(doctorId: string): Promise<Prescription[]> {
-    return db
-      .select()
-      .from(prescriptions)
-      .where(eq(prescriptions.doctorId, doctorId));
-  }
-
-  async createPrescription(
-    insertPrescription: InsertPrescription,
-  ): Promise<Prescription> {
-    const [prescription] = await db
-      .insert(prescriptions)
-      .values(insertPrescription)
-      .returning();
-    return prescription;
-  }
-
-  async updatePrescription(
-    id: string,
-    updates: Partial<Prescription>,
-  ): Promise<Prescription> {
-    const [prescription] = await db
-      .update(prescriptions)
-      .set(updates)
-      .where(eq(prescriptions.id, id))
-      .returning();
-    if (!prescription)
-      throw new Error(`Prescription with id ${id} not found`);
-    return prescription;
-  }
 
   // Lab Report operations
   async getLabReport(id: string): Promise<LabReport | undefined> {

@@ -15,6 +15,7 @@ import PatientsPage from './pages/patients';
 import PatientRecordsPage from './pages/patient-records';
 import CreateRecordPage from './pages/create-record';
 import DoctorRecordsPage from './pages/doctor-records';
+import HomePage from './pages/home';
 
 function ProtectedRoute({ component: Component }: { component: () => JSX.Element }) {
   const { isAuthenticated } = useAuth();
@@ -36,9 +37,11 @@ function PublicRoute({ component: Component }: { component: () => JSX.Element })
   return <Component />;
 }
 
+
 function Router() {
   return (
     <Switch>
+      <Route path="/" component={() => <PublicRoute component={HomePage} />} />
       <Route path="/login" component={() => <PublicRoute component={Login} />} />
       <Route path="/register" component={() => <PublicRoute component={Register} />} />
       <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />

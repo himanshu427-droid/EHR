@@ -108,18 +108,7 @@ export default function HomePage() {
             </section>
 
             {/* Stats Section */}
-            <section className="py-12 bg-white/50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-                        {stats.map((stat, index) => (
-                            <div key={index}>
-                                <div className="text-3xl font-bold text-blue-600">{stat.value}</div>
-                                <div className="text-gray-600 mt-1">{stat.label}</div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
+          
 
             {/* Features Section */}
             <section className="py-20 px-4 sm:px-6 lg:px-8">
@@ -233,7 +222,7 @@ export default function HomePage() {
                         Secure, decentralized electronic health records for the modern healthcare ecosystem.
                     </p>
                     <p className="text-gray-500 text-sm">
-                        © 2024 MedChain EHR. All rights reserved.
+                        © 2025 MedChain EHR. All rights reserved.
                     </p>
                 </div>
             </footer>

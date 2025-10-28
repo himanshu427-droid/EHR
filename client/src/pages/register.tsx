@@ -112,7 +112,7 @@ export default function Register() {
                       <FormLabel>Full Name</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="John Doe"
+                          placeholder="Your Name"
                           data-testid="input-fullname"
                           {...field}
                         />
@@ -129,7 +129,7 @@ export default function Register() {
                       <FormLabel>Username</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="johndoe"
+                          placeholder="user123"
                           data-testid="input-username"
                           {...field}
                         />
@@ -149,7 +149,7 @@ export default function Register() {
                     <FormControl>
                       <Input
                         type="email"
-                        placeholder="john@example.com"
+                        placeholder="user@example.com"
                         data-testid="input-email"
                         {...field}
                       />
@@ -198,10 +198,10 @@ export default function Register() {
                       </FormControl>
                       <SelectContent>
                         <SelectItem value={UserRole.PATIENT}>Patient</SelectItem>
-                        <SelectItem value={UserRole.DOCTOR}>Doctor</SelectItem>
+                        {/* <SelectItem value={UserRole.DOCTOR}>Doctor</SelectItem> */}
                         <SelectItem value={UserRole.LAB}>Lab / Diagnostics</SelectItem>
-                        <SelectItem value={UserRole.HOSPITAL_ADMIN}>Hospital Admin</SelectItem>
-                        <SelectItem value={UserRole.INSURANCE}>Insurance Company</SelectItem>
+                        {/* <SelectItem value={UserRole.HOSPITAL_ADMIN}>Hospital Admin</SelectItem>
+                        <SelectItem value={UserRole.INSURANCE}>Insurance Company</SelectItem> */}
                         <SelectItem value={UserRole.RESEARCHER}>Researcher</SelectItem>
                       </SelectContent>
                     </Select>

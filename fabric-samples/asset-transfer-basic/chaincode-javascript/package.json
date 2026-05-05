@@ -1,0 +1,33 @@
+{
+  "name": "tourist-id-chaincode",
+  "version": "1.0.0",
+  "description": "Tourist ID management chaincode for Hyperledger Fabric",
+  "main": "index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "lint": "eslint *.js */**.js",
+    "pretest": "npm run lint",
+    "test": "nyc mocha --recursive",
+    "start": "fabric-chaincode-node start"
+  },
+  "author": "mady9613",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^2.1.1",
+    "fabric-contract-api": "~2.5",
+    "fabric-shim": "~2.5",
+    "json-stringify-deterministic": "^1.0.12",
+    "sort-keys-recursive": "^2.1.10"
+  },
+  "devDependencies": {
+    "chai": "^4.4.1",
+    "eslint": "^8.57.0",
+    "mocha": "^10.4.0",
+    "nyc": "^15.1.0",
+    "sinon": "^18.0.0",
+    "sinon-chai": "^3.7.0"
+  }
+}

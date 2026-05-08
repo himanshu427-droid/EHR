@@ -65,8 +65,6 @@
     "embla-carousel-react": "^8.6.0",
     "express": "^4.21.2",
     "express-session": "^1.18.1",
-    "fabric-ca-client": "^2.2.20",
-    "fabric-network": "^2.2.20",
     "framer-motion": "^11.13.1",
     "heroicons": "^2.2.0",
     "input-otp": "^1.4.2",

@@ -1,13 +1,12 @@
 import { type Response, type NextFunction, Router } from 'express';
 import { z } from 'zod';
 import { storage } from '../storage';
-import { blockchainService } from '../fabric/blockchain';
+import { createAuditId, hashData } from '../lib/audit';
 import { authenticateToken, type AuthRequest } from '../middleware/auth';
 import { UserRole } from '../../shared/schema'; // Assuming UserRole is correctly exported
 import multer from 'multer';
 import { mkdir } from 'fs/promises';
 import { join } from 'path';
-import { randomUUID } from 'crypto';
 
 // --- Configure Multer ---
 const uploadDir = join(process.cwd(), 'uploads');
@@ -167,7 +166,7 @@ router.post(
         doctorId: creatorRole === UserRole.DOCTOR ? creatorId : null,
         labId: creatorRole === UserRole.LAB ? creatorId : null,
         // insuranceId: creatorRole === UserRole.INSURANCE ? creatorId : null, // Add if needed
-        fileHash: file ? blockchainService.hashData({ filename: file.filename, size: file.size }) : null,
+        fileHash: file ? hashData({ filename: file.filename, size: file.size }) : null,
         filePath: file ? file.path : null,
         fileName: file ? file.originalname : null,
         status: 'active',
@@ -176,7 +175,7 @@ router.post(
         diagnosis: recordType === 'prescription' ? diagnosis : null,
       };
 
-      // Create a simplified object to hash for the blockchain log
+      // Create a simplified object to hash for the application audit log
       const dataToHash = {
           title: recordData.title,
           recordType: recordData.recordType,
@@ -186,27 +185,13 @@ router.post(
           ...(recordType === 'prescription' && { diagnosis: recordData.diagnosis, medications: recordData.medications }),
           timestamp: new Date().toISOString() // Add timestamp for hash uniqueness
       };
-      // Use file hash if available, otherwise hash the constructed data
-      const dataHashForBlockchain = recordData.fileHash || blockchainService.hashData(dataToHash);
+      const auditDataHash = recordData.fileHash || hashData(dataToHash);
 
-      console.log(`Calling blockchainService.addRecord for type ${recordType}: patientId=${patientId}, creatorId=${creatorId}, hash=${dataHashForBlockchain}`);
-
-      // Call blockchainService.addRecord function
-      const blockchainResultPayload = await blockchainService.addRecord(
-          patientId,
-          dataHashForBlockchain,
-          creatorId // Pass the creator's ID
-      );
-      console.log('Blockchain addRecord successful. Result:', blockchainResultPayload);
-      // Note: blockchainResultPayload is the result from chaincode, NOT the Fabric Tx ID.
-
-      // Generate a UUID for the audit log's txId column
-      const auditLogTxId = randomUUID();
+      const auditLogTxId = createAuditId();
 
       // Create record in the database
       const record = await storage.createRecord({
         ...recordData,
-        blockchainTxId: auditLogTxId, // Use audit log ref
       });
       console.log(`Record created in DB (Type: ${recordType}, ID: ${record.id})`);
 
@@ -216,7 +201,7 @@ router.post(
         operation: `addRecord_${recordType}`, // Specific operation based on type
         entityId: record.id,
         entityType: 'record', // Unified entity type
-        dataHash: dataHashForBlockchain, // The hash stored on the blockchain
+        dataHash: auditDataHash,
         metadata: { recordType, patientId, createdBy: creatorId, role: creatorRole }, // Useful metadata
       });
       console.log('Audit log created for record:', record.id);
@@ -234,15 +219,6 @@ router.post(
        if (error instanceof SyntaxError && error.message.includes('JSON')) {
             return res.status(400).json({ message: 'Invalid JSON format received (e.g., for medications)' });
        }
-      // Handle potential blockchain errors
-      if (error.message && (error.message.includes('endorsement') || error.message.includes('chaincode') || error.message.includes('submitTransaction'))) {
-           console.error("Blockchain transaction error:", error.message);
-           // Attempt to provide a more specific message if possible
-           let detail = error.message;
-           if (error.message.includes('ENDORSEMENT_POLICY_FAILURE')) detail = 'Endorsement policy failure.';
-           if (error.message.includes('CHAINCODE_INVOKE_TIMEOUT')) detail = 'Chaincode invocation timed out.';
-           return res.status(502).json({ message: 'Blockchain transaction failed', details: detail });
-      }
       res.status(500).json({ message: 'Failed to create record' });
     }
   },

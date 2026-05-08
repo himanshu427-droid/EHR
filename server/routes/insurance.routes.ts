@@ -1,15 +1,13 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { storage } from '../storage'; 
-import { blockchainService } from '../fabric/blockchain'; 
+import { createAuditId, hashData } from '../lib/audit';
 import { authenticateToken, type AuthRequest } from '../middleware/auth'; 
 import { UserRole} from '../../shared/schema';
 
 const router = Router();
 
 import type {  Response, NextFunction } from 'express';
-import { mkdir } from 'fs/promises';
-import { join } from 'path';
 
 
 // --- Zod Schemas for Input Validation ---
@@ -31,14 +29,6 @@ const reviewClaimSchema = z.object({
   status: z.enum(['pending', 'approved', 'rejected']),
   reviewNotes: z.string().optional(),
 });
-
-
-
-// Configure multer for file uploads
-const uploadDir = join(process.cwd(), 'uploads');
-mkdir(uploadDir, { recursive: true }).catch(console.error);
-
-
 
 // --- Role-Based Access Control (RBAC) Middleware ---
 const requireRole = (role: string | string[]) => {
@@ -93,27 +83,18 @@ const requireRole = (role: string | string[]) => {
           reviewNotes: null,
           reviewedAt: null,
         };
-
-        // Log claim submission using addRecord on blockchain
-        const txId = await blockchainService.submitTransaction(
-          'addRecord', // Using addRecord chaincode function
-          claimData.patientId,
-          blockchainService.hashData(claimData),
-          req.user!.userId, // Insurance ID
-          JSON.stringify({ recordType: 'insurance_claim', claimAmount: claimData.claimAmount }), // Metadata
-        );
+        const auditId = createAuditId();
 
         const claim = await storage.createClaim({
           ...claimData,
-          blockchainTxId: txId,
         });
 
         await storage.createAuditLog({
-          txId,
+          txId: auditId,
           operation: 'submitClaim', // Specific operation log
           entityId: claim.id,
           entityType: 'insurance_claim',
-          dataHash: blockchainService.hashData(claimData),
+          dataHash: hashData(claimData),
           metadata: {
             patientId: claimData.patientId,
             insuranceId: req.user!.userId,
@@ -159,21 +140,12 @@ const requireRole = (role: string | string[]) => {
           reviewedAt: new Date(),
         });
 
-        // Log claim review - Assuming 'reviewClaim' chaincode function exists
-        const txId = await blockchainService.submitTransaction(
-          'reviewClaim',
-          claimId,
-          status,
-          reviewNotes || '',
-          req.user!.userId, // Reviewer ID
-        );
-
         await storage.createAuditLog({
-          txId,
+          txId: createAuditId(),
           operation: 'reviewClaim', // Specific operation log
           entityId: claimId,
           entityType: 'insurance_claim',
-          dataHash: blockchainService.hashData({ claimId, status }), // Hash relevant data
+          dataHash: hashData({ claimId, status }),
           metadata: { status, reviewedBy: req.user!.userId },
         });
 

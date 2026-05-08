@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 // Removed Dialog, Label, Textarea, Select, Plus, Download imports
-import { FileText, Shield, Search, Calendar, AlertCircle } from 'lucide-react'; // Removed Plus, Download
+import { FileText, Search, Calendar, AlertCircle } from 'lucide-react';
 import { api } from '@/lib/api'; // Use api instance
 import type { Record as PatientRecord } from '@shared/schema'; // Renamed Record type alias
 
@@ -144,21 +144,12 @@ export default function RecordsPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-1 gap-4 text-sm">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Calendar className="w-4 h-4" />
                       <span>{new Date(record.createdAt).toLocaleDateString()}</span>
                     </div>
-                     {/* Simplified "Verified" display */}
-                    {record.blockchainTxId && (
-                      <div className="flex items-center gap-2 text-green-600 dark:text-green-500">
-                        <Shield className="w-4 h-4" />
-                        <span>Blockchain Verified</span>
-                      </div>
-                    )}
                   </div>
-                   {/* Removed blockchain TX ID display for patient view - less relevant */}
-                   {/* Removed Download/View on Blockchain buttons for patient view */}
                    {/* Add a "View Details" button if needed */}
                    {/* <div className="flex justify-end">
                        <Button size="sm" variant="outline">View Details</Button>

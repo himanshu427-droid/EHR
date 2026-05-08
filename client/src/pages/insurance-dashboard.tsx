@@ -169,11 +169,11 @@ export default function InsuranceDashboard() {
               <Button
                 className="w-full justify-start gap-2"
                 variant="outline"
-                onClick={() => setLocation('/blockchain')}
-                data-testid="button-verify-blockchain"
+                onClick={() => setLocation('/claims')}
+                data-testid="button-view-claim-history"
               >
                 <Activity className="w-4 h-4" />
-                Verify on Blockchain
+                View Claim History
               </Button>
             </CardContent>
           </Card>

@@ -4,9 +4,9 @@ import authRouter from './routes/auth.routes';
 import recordsRouter from './routes/records.routes';
 import labRouter from './routes/lab.routes';
 import insuranceRouter from './routes/insurance.routes';
-import accessRouter from './routes/access.routes';
+import accessRouter from './routes/access.routes'; 
 import adminRouter from './routes/admin.routes';
-import blockchainRouter from './routes/blockchain.routes';
+import auditRouter from './routes/audit.routes';
 import researcherRouter from './routes/researcher.routes';
 
 
@@ -17,7 +17,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/insurance', insuranceRouter);
   app.use('/api/access', accessRouter); 
   app.use('/api/admin', adminRouter);
-  app.use('/api/blockchain', blockchainRouter);
+  app.use('/api/audit', auditRouter);
   app.use('/api/researcher', researcherRouter);
 
 

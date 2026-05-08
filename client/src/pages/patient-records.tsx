@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle, FileText, ArrowLeft, Shield, Plus, X, Loader2 } from 'lucide-react'; // Import Plus, X, Loader2
+import { AlertCircle, FileText, ArrowLeft, Plus, X, Loader2 } from 'lucide-react'; // Import Plus, X, Loader2
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import type { User, Record as PatientRecord } from '@shared/schema';
@@ -364,7 +364,6 @@ export default function PatientRecordsPage() {
                     <TableHead>Type</TableHead>
                     <TableHead>Date Created</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Verified</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -386,13 +385,6 @@ export default function PatientRecordsPage() {
                          <Badge variant={record.status === 'active' ? 'success' : 'outline'}>
                              {record.status}
                          </Badge>
-                       </TableCell>
-                       <TableCell>
-                          {record.blockchainTxId ? (
-                              <Shield className="w-4 h-4 text-green-600" aria-label="Verified on Blockchain" />
-                          ) : (
-                              <Shield className="w-4 h-4 text-muted-foreground/50" aria-label="Not Verified" />
-                          )}
                        </TableCell>
                       <TableCell className="text-right">
                         {/* Actions: View Details (opens modal/drawer) */}

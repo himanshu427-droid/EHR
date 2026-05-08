@@ -42,7 +42,7 @@ export const records = pgTable("records", {
   fileHash: text("file_hash"),
   filePath: text("file_path"),
   fileName: text("file_name"),
-  blockchainTxId: text("blockchain_tx_id"),
+  auditLogId: text("blockchain_tx_id"),
   status: text("status").notNull().default("active"),
   medications: jsonb("medications"), // array of {name, dosage, frequency, duration} - Nullable
   diagnosis: text("diagnosis"),   // Nullable
@@ -59,7 +59,7 @@ export const records = pgTable("records", {
 //   medications: jsonb("medications").notNull(),
 //   diagnosis: text("diagnosis").notNull(),
 //   notes: text("notes"),
-//   blockchainTxId: text("blockchain_tx_id"),
+//   auditLogId: text("blockchain_tx_id"),
 //   status: text("status").notNull().default("active"),
 //   createdAt: timestamp("created_at").defaultNow().notNull(),
 //   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -75,7 +75,7 @@ export const labReports = pgTable("lab_reports", {
   fileHash: text("file_hash"),
   filePath: text("file_path"),
   fileName: text("file_name"),
-  blockchainTxId: text("blockchain_tx_id"),
+  auditLogId: text("blockchain_tx_id"),
   status: text("status").notNull().default("pending"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -90,7 +90,7 @@ export const insuranceClaims = pgTable("insurance_claims", {
   claimAmount: text("claim_amount").notNull(),
   diagnosis: text("diagnosis").notNull(),
   treatment: text("treatment").notNull(),
-  blockchainTxId: text("blockchain_tx_id"),
+  auditLogId: text("blockchain_tx_id"),
   status: text("status").notNull().default("pending"),
   reviewNotes: text("review_notes"),
   reviewedAt: timestamp("reviewed_at"),
@@ -104,14 +104,14 @@ export const accessControl = pgTable("access_control", {
   entityId: varchar("entity_id").notNull(),
   entityType: text("entity_type").notNull(),
   permissions: jsonb("permissions").notNull(),
-  blockchainTxId: text("blockchain_tx_id"),
+  auditLogId: text("blockchain_tx_id"),
   status: text("status").notNull().default("active"),
   grantedAt: timestamp("granted_at").defaultNow().notNull(),
   revokedAt: timestamp("revoked_at"),
 });
 
-// Blockchain Audit Log table
-export const blockchainAudit = pgTable("blockchain_audit", {
+// Audit log table. The underlying table name stays unchanged for deployment compatibility.
+export const auditLogs = pgTable("blockchain_audit", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   txId: text("tx_id").notNull().unique(),
   operation: text("operation").notNull(),

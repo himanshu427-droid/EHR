@@ -8,7 +8,7 @@ import {
   labReports,
   insuranceClaims,
   accessControl,
-  blockchainAudit,
+  auditLogs,
   UserRole, // Also import the UserRole enum
 } from "../server/db/schema"; // <-- Adjust path if needed
 
@@ -54,7 +54,7 @@ export const insertAccessControlSchema = createInsertSchema(accessControl).omit(
   grantedAt: true,
 });
 
-export const insertBlockchainAuditSchema = createInsertSchema(blockchainAudit).omit({
+export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
   id: true,
   timestamp: true,
 });
@@ -76,8 +76,8 @@ export type InsuranceClaim = typeof insuranceClaims.$inferSelect;
 export type InsertAccessControl = z.infer<typeof insertAccessControlSchema>;
 export type AccessControl = typeof accessControl.$inferSelect;
 
-export type InsertBlockchainAudit = z.infer<typeof insertBlockchainAuditSchema>;
-export type BlockchainAudit = typeof blockchainAudit.$inferSelect;
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+export type AuditLog = typeof auditLogs.$inferSelect;
 
 // === API VALIDATION SCHEMAS ===
 export const loginSchema = z.object({

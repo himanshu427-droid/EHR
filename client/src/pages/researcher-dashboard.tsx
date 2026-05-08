@@ -5,20 +5,28 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FileStack, Database, TrendingUp, Activity, Download } from 'lucide-react';
+import { FileStack, Database, TrendingUp, Download } from 'lucide-react';
 import { useLocation } from 'wouter';
-import type { Record as HealthRecord } from '@shared/schema';
+
+interface ResearchDataset {
+  id: string;
+  operation: string;
+  entityType: string;
+  recordType: string | null;
+  timestamp: string;
+}
 
 export default function ResearcherDashboard() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
 
-  const { data: datasets, isLoading } = useQuery<HealthRecord[]>({
+  const { data: datasets, isLoading } = useQuery<ResearchDataset[]>({
     queryKey: ['/api/researcher/datasets'],
   });
 
   const recordsByType = datasets?.reduce((acc, record) => {
-    acc[record.recordType] = (acc[record.recordType] || 0) + 1;
+    const type = record.recordType || record.entityType;
+    acc[type] = (acc[type] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
@@ -156,15 +164,6 @@ export default function ResearcherDashboard() {
                 <TrendingUp className="w-4 h-4" />
                 View Analytics
               </Button>
-              <Button
-                className="w-full justify-start gap-2"
-                variant="outline"
-                onClick={() => setLocation('/blockchain')}
-                data-testid="button-verify-provenance"
-              >
-                <Activity className="w-4 h-4" />
-                Verify Data Provenance
-              </Button>
             </CardContent>
           </Card>
         </div>
@@ -178,7 +177,7 @@ export default function ResearcherDashboard() {
             <div className="p-4 rounded-md bg-muted/50 space-y-2">
               <h4 className="font-medium text-sm">Data Privacy Notice</h4>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                All datasets are fully anonymized and de-identified in accordance with healthcare data protection regulations. Patient identities are protected through cryptographic hashing on the blockchain.
+                All datasets are fully anonymized and de-identified in accordance with healthcare data protection regulations. Direct patient identifiers are excluded from researcher-facing views.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">

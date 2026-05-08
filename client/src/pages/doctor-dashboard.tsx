@@ -214,11 +214,11 @@ export default function DoctorDashboard() {
               <Button
                 className="w-full justify-start gap-2"
                 variant="outline"
-                onClick={() => setLocation('/blockchain')}
-                data-testid="button-verify-records"
+                onClick={() => setLocation('/records')}
+                data-testid="button-view-created-records"
               >
                 <Activity className="w-4 h-4" />
-                Verify Records on Blockchain
+                Review Created Records
               </Button>
             </CardContent>
           </Card>

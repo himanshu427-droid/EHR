@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileText, Search, AlertCircle, Shield } from 'lucide-react';
+import { FileText, Search, AlertCircle } from 'lucide-react';
 import { Link } from 'wouter';
 import { api } from '@/lib/api';
 import type { Record as PatientRecord } from '@shared/schema';
@@ -140,7 +140,6 @@ export default function DoctorRecordsPage() {
                     <TableHead>Patient ID</TableHead>
                     <TableHead>Date Created</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Verified</TableHead>
                     {/* <TableHead className="text-right">Actions</TableHead> */}
                   </TableRow>
                 </TableHeader>
@@ -165,13 +164,6 @@ export default function DoctorRecordsPage() {
                          <Badge variant={record.status === 'active' ? 'success' : 'outline'}>
                              {record.status}
                          </Badge>
-                       </TableCell>
-                       <TableCell>
-                          {record.blockchainTxId ? (
-                            <Shield className="w-4 h-4 text-green-600" aria-label="Verified" />
-                          ) : (
-                            <Shield className="w-4 h-4 text-muted-foreground/50" aria-label="Not Verified" />
-                          )}
                        </TableCell>
                       {/* <TableCell className="text-right">
                         <Button variant="ghost" size="sm">View</Button>

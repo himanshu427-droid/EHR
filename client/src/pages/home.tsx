@@ -25,27 +25,19 @@ export default function HomePage() {
         },
         {
             icon: <Database className="h-8 w-8" />,
-            title: "Blockchain Verified",
-            description: "Tamper-proof medical records using blockchain technology for ultimate trust."
+            title: "Audit Ready",
+            description: "Application-level integrity checks and event history help teams trace important actions."
         }
-    ];
-
-    const stats = [
-        { value: "50K+", label: "Patients Served" },
-        { value: "500+", label: "Healthcare Providers" },
-        { value: "1M+", label: "Secure Records" },
-        { value: "99.9%", label: "Uptime Reliability" }
     ];
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-            {/* Navigation */}
             <nav className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
                         <div className="flex items-center space-x-2">
                             <Heart className="h-8 w-8 text-blue-600" />
-                            <span className="text-xl font-bold text-gray-900">MedChain EHR</span>
+                            <span className="text-xl font-bold text-gray-900">MediChain EHR</span>
                         </div>
 
                         <div className="flex items-center space-x-4">
@@ -71,7 +63,6 @@ export default function HomePage() {
                 </div>
             </nav>
 
-            {/* Hero Section */}
             <section className="pt-20 pb-16 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-7xl mx-auto text-center">
                     <h1 className="text-4xl sm:text-6xl font-bold text-gray-900 mb-6">
@@ -79,8 +70,8 @@ export default function HomePage() {
                         <span className="text-blue-600 block">Healthcare Records</span>
                     </h1>
                     <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-                        Secure, decentralized electronic health records powered by blockchain technology.
-                        Take control of your medical data with unprecedented privacy and accessibility.
+                        Secure electronic health records designed for modern care teams.
+                        Keep medical data private, accessible, and easier to manage across providers.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         {isAuthenticated ? (
@@ -107,18 +98,14 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* Stats Section */}
-          
-
-            {/* Features Section */}
             <section className="py-20 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-                            Why Choose MedChain EHR?
+                            Why Choose MediChain EHR?
                         </h2>
                         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                            We're building the future of healthcare records with cutting-edge technology
+                            We&apos;re building the future of healthcare records with cutting-edge technology
                             and patient-first design.
                         </p>
                     </div>
@@ -143,7 +130,6 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* How It Works Section */}
             <section className="py-20 bg-white/70">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
@@ -186,14 +172,13 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* CTA Section */}
             <section className="py-20 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-4xl mx-auto text-center">
                     <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
                         Ready to Take Control of Your Health Data?
                     </h2>
                     <p className="text-xl text-gray-600 mb-8">
-                        Join thousands of patients and healthcare providers already using MedChain EHR.
+                        Join patients and healthcare providers already using MediChain EHR.
                     </p>
                     {isAuthenticated ? (
                         <Link href="/dashboard">
@@ -211,22 +196,20 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* Footer */}
             <footer className="bg-gray-900 text-white py-12">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <div className="flex items-center justify-center space-x-2 mb-6">
                         <Heart className="h-6 w-6 text-blue-400" />
-                        <span className="text-xl font-bold">MedChain EHR</span>
+                        <span className="text-xl font-bold">MediChain EHR</span>
                     </div>
                     <p className="text-gray-400 mb-4">
-                        Secure, decentralized electronic health records for the modern healthcare ecosystem.
+                        Secure electronic health records for the modern healthcare ecosystem.
                     </p>
                     <p className="text-gray-500 text-sm">
-                        © 2025 MedChain EHR. All rights reserved.
+                        © 2025 MediChain EHR. All rights reserved.
                     </p>
                 </div>
             </footer>
         </div>
     );
-    
 }

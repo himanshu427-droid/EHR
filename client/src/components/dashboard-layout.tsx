@@ -16,7 +16,6 @@ import {
   Home,
   FileText,
   Users,
-  Activity,
   ShieldCheck,
   LogOut,
   FileStack,
@@ -106,7 +105,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     if (user.role === UserRole.HOSPITAL_ADMIN) {
       items.push(
         { label: 'Manage Users', icon: Users, path: '/manage-users' },
-        { label: 'Blockchain Audit', icon: Activity, path: '/blockchain-audit' }
+        { label: 'Audit Logs', icon: ShieldCheck, path: '/activity' }
       );
     }
 
@@ -117,8 +116,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     if (user.role === UserRole.RESEARCHER) {
       items.push({ label: 'Datasets', icon: FileStack, path: '/datasets' });
     }
-
-    // items.push({ label: 'Blockchain Verify', icon: ShieldCheck, path: '/blockchain' });
 
     return items;
   };

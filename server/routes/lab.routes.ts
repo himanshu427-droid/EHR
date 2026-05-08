@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { storage } from '../storage'; // Adjust path as needed
-import { blockchainService } from '../fabric/blockchain'; // Adjust path
-import { authenticateToken, type AuthRequest } from '../middleware/auth'; // Adjust path
+import { storage } from '../storage';
+import { createAuditId, hashData } from '../lib/audit';
+import { authenticateToken, type AuthRequest } from '../middleware/auth';
 import { UserRole} from '../../shared/schema';
 import type { Response, NextFunction } from 'express';
 import multer from 'multer';
@@ -100,7 +100,7 @@ const router = Router();
           testType,
           results: parsedResults, // Store parsed JSON
           fileHash: file
-            ? blockchainService.hashData({
+            ? hashData({
                 filename: file.filename,
                 size: file.size,
               })
@@ -109,28 +109,18 @@ const router = Router();
           fileName: file ? file.originalname : null,
           status: file ? 'completed' : 'pending', // Consider if status should be different if results are provided w/o file
         };
-
-        // Log lab report upload using addRecord on blockchain
-        const txId = await blockchainService.submitTransaction(
-          'addRecord', // Using addRecord chaincode function
-          patientId,
-          reportData.fileHash || blockchainService.hashData(reportData),
-          req.user!.userId, // Lab ID
-          JSON.stringify({ recordType: 'lab_report', testType }), // Metadata
-        );
+        const auditId = createAuditId();
 
         const report = await storage.createLabReport({
           ...reportData,
-          blockchainTxId: txId,
         });
 
         await storage.createAuditLog({
-          txId,
+          txId: auditId,
           operation: 'addLabReport', // Specific operation log
           entityId: report.id,
           entityType: 'lab_report',
-          dataHash:
-            reportData.fileHash || blockchainService.hashData(reportData),
+          dataHash: reportData.fileHash || hashData(reportData),
           metadata: { patientId, labId: req.user!.userId, testType },
         });
 

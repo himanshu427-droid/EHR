@@ -5,7 +5,7 @@ import {
   labReports,
   insuranceClaims,
   accessControl, // Ensure accessControl is imported
-  blockchainAudit,
+  auditLogs,
   UserRole,
 } from './db/schema';
 import { eq, and, or, ilike } from 'drizzle-orm'; // <-- Import 'and' operator
@@ -20,8 +20,8 @@ import type {
   InsertInsuranceClaim,
   AccessControl,
   InsertAccessControl,
-  BlockchainAudit,
-  InsertBlockchainAudit,
+  AuditLog,
+  InsertAuditLog,
 } from '@shared/schema';
 
 export interface IStorage {
@@ -71,11 +71,11 @@ export interface IStorage {
     access: Partial<AccessControl>,
   ): Promise<AccessControl>;
 
-  // Blockchain Audit operations
-  getBlockchainAudit(id: string): Promise<BlockchainAudit | undefined>;
-  getAllAuditLogs(): Promise<BlockchainAudit[]>;
-  getAuditLogsByEntity(entityId: string): Promise<BlockchainAudit[]>;
-  createAuditLog(log: InsertBlockchainAudit): Promise<BlockchainAudit>;
+  // Audit log operations
+  getAuditLog(id: string): Promise<AuditLog | undefined>;
+  getAllAuditLogs(): Promise<AuditLog[]>;
+  getAuditLogsByEntity(entityId: string): Promise<AuditLog[]>;
+  createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
 }
 
 // Corrected PostgresStorage implementation
@@ -312,33 +312,33 @@ export class PostgresStorage implements IStorage {
     return access;
   }
 
-  // Blockchain Audit operations
-  async getBlockchainAudit(id: string): Promise<BlockchainAudit | undefined> {
+  // Audit log operations
+  async getAuditLog(id: string): Promise<AuditLog | undefined> {
     const [log] = await db
       .select()
-      .from(blockchainAudit)
-      .where(eq(blockchainAudit.id, id));
+      .from(auditLogs)
+      .where(eq(auditLogs.id, id));
     return log;
   }
 
-  async getAllAuditLogs(): Promise<BlockchainAudit[]> {
-    // Optionally add .orderBy(desc(blockchainAudit.timestamp))
-    return db.select().from(blockchainAudit);
+  async getAllAuditLogs(): Promise<AuditLog[]> {
+    // Optionally add .orderBy(desc(auditLogs.timestamp))
+    return db.select().from(auditLogs);
   }
 
-  async getAuditLogsByEntity(entityId: string): Promise<BlockchainAudit[]> {
+  async getAuditLogsByEntity(entityId: string): Promise<AuditLog[]> {
     return db
       .select()
-      .from(blockchainAudit)
-      .where(eq(blockchainAudit.entityId, entityId));
-    // Optionally add .orderBy(desc(blockchainAudit.timestamp))
+      .from(auditLogs)
+      .where(eq(auditLogs.entityId, entityId));
+    // Optionally add .orderBy(desc(auditLogs.timestamp))
   }
 
   async createAuditLog(
-    insertLog: InsertBlockchainAudit,
-  ): Promise<BlockchainAudit> {
+    insertLog: InsertAuditLog,
+  ): Promise<AuditLog> {
     const [log] = await db
-      .insert(blockchainAudit)
+      .insert(auditLogs)
       .values(insertLog)
       .returning();
     return log;

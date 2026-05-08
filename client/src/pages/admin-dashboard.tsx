@@ -5,9 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, Activity, FileText, Shield, UserPlus } from 'lucide-react';
+import { Users, Activity } from 'lucide-react';
 import { useLocation } from 'wouter';
-import type { User as UserType, BlockchainAudit } from '@shared/schema';
+import type { User as UserType, AuditLog } from '@shared/schema';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -17,8 +17,8 @@ export default function AdminDashboard() {
     queryKey: ['/api/admin/users'],
   });
 
-  const { data: auditLogs, isLoading: auditLoading } = useQuery<BlockchainAudit[]>({
-    queryKey: ['/api/blockchain/audit'],
+  const { data: auditLogs, isLoading: auditLoading } = useQuery<AuditLog[]>({
+    queryKey: ['/api/audit/logs'],
   });
 
   const roleGroups = users?.reduce((acc, user) => {
@@ -142,20 +142,11 @@ export default function AdminDashboard() {
               <Button
                 className="w-full justify-start gap-2"
                 variant="outline"
-                onClick={() => setLocation('/blockchain-audit')}
+                onClick={() => setLocation('/activity')}
                 data-testid="button-view-audit"
               >
                 <Activity className="w-4 h-4" />
-                Blockchain Audit Log
-              </Button>
-              <Button
-                className="w-full justify-start gap-2"
-                variant="outline"
-                onClick={() => setLocation('/blockchain')}
-                data-testid="button-verify-integrity"
-              >
-                <Shield className="w-4 h-4" />
-                Verify Data Integrity
+                Audit Activity
               </Button>
             </CardContent>
           </Card>
@@ -163,8 +154,8 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Recent Blockchain Activity</CardTitle>
-            <CardDescription>Latest transactions on the blockchain</CardDescription>
+            <CardTitle>Recent Audit Activity</CardTitle>
+            <CardDescription>Latest application events and integrity checks</CardDescription>
           </CardHeader>
           <CardContent>
             {auditLoading ? (
@@ -176,9 +167,9 @@ export default function AdminDashboard() {
             ) : recentAuditLogs.length === 0 ? (
               <div className="text-center py-8">
                 <Activity className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
-                <p className="text-sm text-muted-foreground">No blockchain activity</p>
+                <p className="text-sm text-muted-foreground">No recent audit activity</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Transaction logs will appear here
+                  Audit events will appear here
                 </p>
               </div>
             ) : (

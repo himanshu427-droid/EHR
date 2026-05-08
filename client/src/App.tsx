@@ -11,7 +11,7 @@ import Register from '@/pages/register';
 import Dashboard from '@/pages/dashboard';
 import Records from '@/pages/records';
 import Consent from '@/pages/consent';
-import Blockchain from '@/pages/blockchain';
+import Activity from '@/pages/activity';
 import PatientsPage from './pages/patients';
 import PatientRecordsPage from './pages/patient-records';
 import CreateRecordPage from './pages/create-record';
@@ -50,7 +50,7 @@ function Router() {
       <Route path="/my-records" component={() => <ProtectedRoute component={Records} />} />
       <Route path ="/records" component={()=>< ProtectedRoute component={DoctorRecordsPage}/>} />
       <Route path="/consent" component={() => <ProtectedRoute component={Consent} />} />
-      <Route path="/blockchain" component={() => <ProtectedRoute component={Blockchain} />} />
+      <Route path="/activity" component={() => <ProtectedRoute component={Activity} />} />
       <Route path="/patients" component={()=>< ProtectedRoute component={PatientsPage}/>} />
       <Route path="/patient/:patientId/records" component={()=><ProtectedRoute component={PatientRecordsPage}/>} />
       <Route path="/records/create" component={()=>< ProtectedRoute component={CreateRecordPage}/>} />

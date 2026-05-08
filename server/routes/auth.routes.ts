@@ -1,10 +1,14 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
-import { storage } from '../storage'; // Adjust path as needed
-import { blockchainService } from '../fabric/blockchain'; // Adjust path
-import { authenticateToken, generateToken, type AuthRequest } from '../middleware/auth'; // Adjust path
-import { loginSchema, registerSchema, UserRole, type RegisterRequest, type User} from '../../shared/schema';
+import { storage } from '../storage';
+import { hashData, createAuditId } from '../lib/audit';
+import {
+  authenticateToken,
+  generateToken,
+  type AuthRequest,
+} from '../middleware/auth';
+import { loginSchema, registerSchema } from '../../shared/schema';
 
 const userIdParamSchema = z.object({
   id: z.string().uuid('Invalid User ID format'),
@@ -31,18 +35,12 @@ const router = Router();
         password: hashedPassword,
       });
 
-      const txId = await blockchainService.submitTransaction(
-        'userRegistered',
-        user.id,
-        user.role,
-      );
-
       await storage.createAuditLog({
-        txId,
+        txId: createAuditId(),
         operation: 'userRegistered',
         entityId: user.id,
         entityType: 'user',
-        dataHash: blockchainService.hashData({
+        dataHash: hashData({
           userId: user.id,
           role: user.role,
         }),

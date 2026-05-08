@@ -1,15 +1,13 @@
 import { Router } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
-import { blockchainService } from "../fabric/blockchain";
+import { createAuditId, hashData } from "../lib/audit";
 import {
   authenticateToken,
-  generateToken,
   type AuthRequest,
 } from "../middleware/auth";
 import { UserRole, type UserRoleType } from "../../shared/schema";
 import type { Response, NextFunction } from "express";
-import { randomUUID } from "crypto";
 
 const grantAccessSchema = z.object({
   entityId: z.string().uuid("Invalid Entity ID"),
@@ -22,10 +20,6 @@ const grantAccessSchema = z.object({
 
 const revokeAccessSchema = z.object({
   id: z.string().uuid("Invalid Access Control ID"),
-});
-
-const findPatientSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
 });
 
 const findPatientQuerySchema = z.object({
@@ -137,12 +131,6 @@ router.post(
           .json({ message: "Access already granted to this entity" });
       }
 
-      const txId = await blockchainService.grantAccess(
-        accessData.patientId,
-        entityId,
-        permissions
-      );
-
       let access;
       if (existing && existing.status !== "active") {
         access = await storage.updateAccessControl(existing.id, {
@@ -150,22 +138,20 @@ router.post(
           permissions: permissions,
           grantedAt: new Date(),
           revokedAt: null,
-          blockchainTxId: txId,
         });
       } else {
         // Create new grant
         access = await storage.createAccessControl({
           ...accessData,
-          blockchainTxId: txId,
         });
       }
 
       await storage.createAuditLog({
-        txId,
+        txId: createAuditId(),
         operation: "grantAccess",
         entityId: access.id,
         entityType: "access_control",
-        dataHash: blockchainService.hashData(accessData),
+        dataHash: hashData(accessData),
         metadata: { patientId: accessData.patientId, entityId, entityType },
       });
 
@@ -207,50 +193,24 @@ router.post(
         return res.status(400).json({ message: "Access is already revoked" });
       }
 
-      let txId: string | null = null;
-      let reconciledWithoutLedger = false;
-
-      try {
-        txId = await blockchainService.revokeAccess(access.id);
-      } catch (error: any) {
-        if (
-          error instanceof Error &&
-          error.message.includes("does not exist")
-        ) {
-          reconciledWithoutLedger = true;
-          console.warn(
-            `Access ${access.id} was missing on the current ledger. Reconciling database state to revoked.`
-          );
-        } else {
-          throw error;
-        }
-      }
-
       const updatedAccess = await storage.updateAccessControl(id, {
         status: "revoked",
         revokedAt: new Date(),
-        blockchainTxId: txId,
       });
 
       await storage.createAuditLog({
-        txId: txId || randomUUID(),
+        txId: createAuditId(),
         operation: "revokeAccess",
         entityId: id,
         entityType: "access_control",
-        dataHash: blockchainService.hashData({ id, status: "revoked" }),
+        dataHash: hashData({ id, status: "revoked" }),
         metadata: {
           patientId: access.patientId,
           entityId: access.entityId,
-          reconciledWithoutLedger,
         },
       });
 
-      res.json({
-        ...updatedAccess,
-        warning: reconciledWithoutLedger
-          ? "Access was already missing on the current blockchain ledger, so the database record was reconciled locally."
-          : undefined,
-      });
+      res.json(updatedAccess);
     } catch (error: any) {
       console.error("Revoke access error:", error);
       if (error instanceof z.ZodError) {
@@ -350,7 +310,6 @@ router.post(
           accessRecord = await storage.updateAccessControl(existingAccess.id, {
             status: "pending",
             revokedAt: null,
-            blockchainTxId: null,
             grantedAt: new Date(),
             permissions: ["view_records", "view_prescriptions"],
           });
@@ -540,22 +499,6 @@ router.post(
           .json({ message: "This request is not pending or already handled" });
       }
 
-      console.log(
-        "Submitting grantAccess to blockchain with accessId:",
-        accessId
-      );
-      const blockchainResultPayload = await blockchainService.submitTransaction(
-        "grantAccess",
-        accessId,
-        access.patientId,
-        access.entityId,
-        JSON.stringify(access.permissions)
-      );
-      console.log(
-        "Blockchain transaction successful, result payload:",
-        blockchainResultPayload
-      );
-
       console.log("Updating DB record to active...");
       const updatedAccess = await storage.updateAccessControl(accessId, {
         status: "active",
@@ -564,13 +507,12 @@ router.post(
       console.log("DB record updated:", updatedAccess);
 
       console.log("Creating audit log...");
-      const auditLogTxId = randomUUID();
       await storage.createAuditLog({
-        txId: auditLogTxId,
+        txId: createAuditId(),
         operation: "grantAccess",
         entityId: updatedAccess.id,
         entityType: "access_control",
-        dataHash: blockchainService.hashData({
+        dataHash: hashData({
           accessId: updatedAccess.id,
           status: "active",
           patientId: updatedAccess.patientId,

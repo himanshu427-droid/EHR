@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FileText, Shield, Users, Activity, Plus } from 'lucide-react';
+import { FileText, Shield, Users } from 'lucide-react';
 import { useLocation } from 'wouter';
 import type { Record, AccessControl } from '@shared/schema';
 
@@ -52,7 +52,7 @@ export default function PatientDashboard() {
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Welcome, {user?.fullName}</h1>
-          <p className="text-muted-foreground mt-2">Manage your health records securely on the blockchain</p>
+          <p className="text-muted-foreground mt-2">Manage your health records securely in one place</p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
@@ -148,15 +148,6 @@ export default function PatientDashboard() {
               >
                 <Shield className="w-4 h-4" />
                 Manage Consent
-              </Button>
-              <Button
-                className="w-full justify-start gap-2"
-                variant="outline"
-                onClick={() => setLocation('/blockchain')}
-                data-testid="button-verify-blockchain"
-              >
-                <Activity className="w-4 h-4" />
-                Verify on Blockchain
               </Button>
             </CardContent>
           </Card>

@@ -12,7 +12,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from '@/components/ui/form';
 import {
   Select,
@@ -98,7 +97,7 @@ export default function Register() {
           </div>
           <CardTitle className="text-3xl font-bold">Create Account</CardTitle>
           <CardDescription className="text-base">
-            Join the MediChain EHR network
+            Join the MediChain EHR platform
           </CardDescription>
         </CardHeader>
         <CardContent>

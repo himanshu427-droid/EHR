@@ -152,11 +152,11 @@ export default function LabDashboard() {
               <Button
                 className="w-full justify-start gap-2"
                 variant="outline"
-                onClick={() => setLocation('/blockchain')}
-                data-testid="button-verify-blockchain"
+                onClick={() => setLocation('/lab-reports')}
+                data-testid="button-review-completed-reports"
               >
                 <Activity className="w-4 h-4" />
-                Verify on Blockchain
+                Review Completed Reports
               </Button>
             </CardContent>
           </Card>
@@ -165,7 +165,7 @@ export default function LabDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Recent Completed Reports</CardTitle>
-            <CardDescription>Your recently completed and verified reports</CardDescription>
+            <CardDescription>Your recently completed reports</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (

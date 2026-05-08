@@ -91,7 +91,7 @@ export default function Login() {
            </div>
            <CardTitle className="text-3xl font-bold">MediChain EHR</CardTitle>
            <CardDescription className="text-base">
-             Secure, decentralized electronic health records
+             Secure electronic health records
            </CardDescription>
         </CardHeader>
         <CardContent>

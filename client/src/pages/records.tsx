@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/dashboard-layout';
-import { useAuth } from '@/lib/auth'; // Assuming useAuth provides user info
 import {
   Card,
   CardContent,
@@ -16,7 +15,6 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 // Removed Dialog, Label, Textarea, Select, Plus, Download imports
 import { FileText, Shield, Search, Calendar, AlertCircle } from 'lucide-react'; // Removed Plus, Download
-import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/api'; // Use api instance
 import type { Record as PatientRecord } from '@shared/schema'; // Renamed Record type alias
 
@@ -30,7 +28,6 @@ const formatRecordType = (type: string) => {
 export default function RecordsPage() {
   // Removed user state as patient cannot add records now
   // const { user } = useAuth();
-  const { toast } = useToast(); // Keep toast for potential future actions/errors
   // Removed Dialog state and form state
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -129,15 +126,15 @@ export default function RecordsPage() {
                          {record.recordType === 'prescription' ? (record.diagnosis || record.title) : record.title}
                       </CardTitle>
                       {/* Show description only if it exists */}
-                      {record.description && (
+                       {record.description && (
                          <CardDescription className="mt-1 line-clamp-2"> {/* Limit description lines */}
                            {record.description}
                          </CardDescription>
                       )}
                        {/* Optionally display medications preview for prescriptions */}
-                       {record.recordType === 'prescription' && record.medications && (
+                       {record.recordType === 'prescription' && Array.isArray(record.medications) && (
                            <p className="text-xs text-muted-foreground mt-1 truncate">
-                             Meds: {(record.medications as any[]).map(m => m.name).join(', ')}
+                             Meds: {(record.medications as Array<{ name?: string }>).map((medication) => medication.name).filter(Boolean).join(', ')}
                            </p>
                        )}
                     </div>

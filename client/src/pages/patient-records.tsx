@@ -389,9 +389,9 @@ export default function PatientRecordsPage() {
                        </TableCell>
                        <TableCell>
                           {record.blockchainTxId ? (
-                              <Shield className="w-4 h-4 text-green-600" title="Verified on Blockchain"/>
+                              <Shield className="w-4 h-4 text-green-600" aria-label="Verified on Blockchain" />
                           ) : (
-                              <Shield className="w-4 h-4 text-muted-foreground/50" title="Not Verified"/>
+                              <Shield className="w-4 h-4 text-muted-foreground/50" aria-label="Not Verified" />
                           )}
                        </TableCell>
                       <TableCell className="text-right">

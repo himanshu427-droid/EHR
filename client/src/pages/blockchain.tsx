@@ -10,9 +10,17 @@ import { Shield, Search, CheckCircle, Copy, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { BlockchainAudit } from '@shared/schema';
 
+interface BlockchainStatus {
+  enabled: boolean;
+}
+
 export default function Blockchain() {
   const { toast } = useToast();
   const [searchTxId, setSearchTxId] = useState('');
+
+  const { data: blockchainStatus } = useQuery<BlockchainStatus>({
+    queryKey: ['/api/blockchain/status'],
+  });
 
   const { data: auditLogs, isLoading } = useQuery<BlockchainAudit[]>({
     queryKey: ['/api/blockchain/audit'],
@@ -49,11 +57,15 @@ export default function Blockchain() {
               <div className="flex-1 space-y-2">
                 <h3 className="font-semibold text-lg">Blockchain-Secured Records</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  All health records, prescriptions, and access permissions are cryptographically hashed and stored on the Hyperledger Fabric blockchain network. This ensures immutability, transparency, and full audit capability.
+                  {blockchainStatus?.enabled
+                    ? 'All health records, prescriptions, and access permissions are cryptographically hashed and stored on the Hyperledger Fabric blockchain network. This ensures immutability, transparency, and full audit capability.'
+                    : 'Fabric is currently disabled for this deployment. Audit entries are still stored in the application database so you can review operational history without running the blockchain network.'}
                 </p>
                 <div className="flex items-center gap-2 pt-1">
                   <CheckCircle className="w-4 h-4 text-success" />
-                  <span className="text-xs font-medium text-success">Network Status: Active</span>
+                  <span className="text-xs font-medium text-success">
+                    {blockchainStatus?.enabled ? 'Network Status: Active' : 'Mode: Database Only'}
+                  </span>
                 </div>
               </div>
             </div>

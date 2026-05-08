@@ -184,7 +184,6 @@ router.post(
           creatorId: creatorId,
           // Conditionally include relevant fields based on type
           ...(recordType === 'prescription' && { diagnosis: recordData.diagnosis, medications: recordData.medications }),
-          ...(recordType === 'lab_report' /* && { testType: ... } */), // Add specifics for other types if needed
           timestamp: new Date().toISOString() // Add timestamp for hash uniqueness
       };
       // Use file hash if available, otherwise hash the constructed data
@@ -248,5 +247,6 @@ router.post(
     }
   },
 );
+
 
 export default router; // Export the router instance

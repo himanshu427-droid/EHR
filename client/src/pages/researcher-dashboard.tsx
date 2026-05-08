@@ -7,13 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FileStack, Database, TrendingUp, Activity, Download } from 'lucide-react';
 import { useLocation } from 'wouter';
-import type { Record } from '@shared/schema';
+import type { Record as HealthRecord } from '@shared/schema';
 
 export default function ResearcherDashboard() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
 
-  const { data: datasets, isLoading } = useQuery<Record[]>({
+  const { data: datasets, isLoading } = useQuery<HealthRecord[]>({
     queryKey: ['/api/researcher/datasets'],
   });
 

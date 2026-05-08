@@ -1,4 +1,4 @@
-import { Gateway, Wallets, Wallet, GatewayOptions, Contract } from 'fabric-network';
+import { Gateway, Wallets, Wallet, GatewayOptions, Contract, type Identity, type X509Identity } from 'fabric-network';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto'; // Added for hashing
@@ -9,6 +9,11 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const USE_FABRIC = process.env.USE_FABRIC?.trim().toLowerCase() === 'true';
+
+if (!USE_FABRIC) {
+  console.warn('USE_FABRIC is disabled. Running in database-only mode without Hyperledger Fabric.');
+}
 
 /**
  * Path to the file system wallet that holds the identities (Admin, appUser).
@@ -37,6 +42,7 @@ const CCP_PATH = path.resolve(
 // --- Fabric Constants ---
 const CHANNEL_NAME = 'ehrchannel';
 const CHAINCODE_NAME = 'ehr';
+const MSP_ID = 'Org1MSP';
 
 /**
  * The identity name to use for connecting to the network.
@@ -44,6 +50,107 @@ const CHAINCODE_NAME = 'ehr';
  * You typically create this using the 'registerUser.js' script.
  */
 const IDENTITY_NAME = 'appUser';
+
+const ORG1_USER_CERT_PATH = path.resolve(
+  __dirname,
+  '..',
+  '..',
+  'fabric-samples',
+  'test-network',
+  'organizations',
+  'peerOrganizations',
+  'org1.example.com',
+  'users',
+  'User1@org1.example.com',
+  'msp',
+  'signcerts',
+  'cert.pem'
+);
+
+const ORG1_USER_KEY_DIR = path.resolve(
+  __dirname,
+  '..',
+  '..',
+  'fabric-samples',
+  'test-network',
+  'organizations',
+  'peerOrganizations',
+  'org1.example.com',
+  'users',
+  'User1@org1.example.com',
+  'msp',
+  'keystore'
+);
+
+function createMockTransactionId(functionName: string): string {
+  return `local-${functionName}-${crypto.randomUUID()}`;
+}
+
+function readCurrentOrg1Identity(): { certificate: string; privateKey: string } {
+  if (!fs.existsSync(ORG1_USER_CERT_PATH)) {
+    throw new Error(
+      `Fabric user certificate not found at ${ORG1_USER_CERT_PATH}. Start the test network and enroll Org1 users first.`
+    );
+  }
+
+  if (!fs.existsSync(ORG1_USER_KEY_DIR)) {
+    throw new Error(
+      `Fabric user keystore not found at ${ORG1_USER_KEY_DIR}. Start the test network and enroll Org1 users first.`
+    );
+  }
+
+  const certificate = fs.readFileSync(ORG1_USER_CERT_PATH, 'utf8');
+  const keyFiles = fs.readdirSync(ORG1_USER_KEY_DIR);
+  const keyFile = keyFiles.find((file) => file.endsWith('_sk'));
+
+  if (!keyFile) {
+    throw new Error(`No private key ending with '_sk' found in ${ORG1_USER_KEY_DIR}.`);
+  }
+
+  const privateKey = fs.readFileSync(path.join(ORG1_USER_KEY_DIR, keyFile), 'utf8');
+  return { certificate, privateKey };
+}
+
+function isX509Identity(identity: Identity | undefined): identity is X509Identity {
+  return !!identity && identity.type === 'X.509';
+}
+
+async function ensureWalletIdentity(wallet: Wallet): Promise<void> {
+  const currentIdentity = readCurrentOrg1Identity();
+  const existingIdentity = await wallet.get(IDENTITY_NAME);
+
+  const existingCertificate = isX509Identity(existingIdentity)
+    ? existingIdentity.credentials.certificate
+    : undefined;
+
+  const existingPrivateKey = isX509Identity(existingIdentity)
+    ? existingIdentity.credentials.privateKey
+    : undefined;
+
+  const identityChanged =
+    !existingIdentity ||
+    existingIdentity.mspId !== MSP_ID ||
+    existingCertificate !== currentIdentity.certificate ||
+    existingPrivateKey !== currentIdentity.privateKey;
+
+  if (!identityChanged) {
+    return;
+  }
+
+  const walletIdentity: X509Identity = {
+    credentials: currentIdentity,
+    mspId: MSP_ID,
+    type: 'X.509',
+  };
+
+  await wallet.put(IDENTITY_NAME, walletIdentity);
+
+  console.log(
+    existingIdentity
+      ? `Refreshed stale wallet identity '${IDENTITY_NAME}' from current Org1 user credentials.`
+      : `Imported wallet identity '${IDENTITY_NAME}' from current Org1 user credentials.`
+  );
+}
 
 // --- Internal Function ---
 
@@ -55,6 +162,9 @@ async function connectToGateway(): Promise<{ contract: Contract; gateway: Gatewa
   // 1. Load the wallet
   const wallet: Wallet = await Wallets.newFileSystemWallet(WALLET_PATH);
   console.log(`Wallet path: ${WALLET_PATH}`);
+
+  // Keep the local test-network wallet aligned with the current Org1 user.
+  await ensureWalletIdentity(wallet);
 
   // 2. Check if the identity exists
   const identity = await wallet.get(IDENTITY_NAME);
@@ -93,6 +203,11 @@ async function connectToGateway(): Promise<{ contract: Contract; gateway: Gatewa
     // Disconnect on connection failure
     gateway.disconnect();
     console.error('Failed to connect to gateway:', error);
+    if (error instanceof Error && error.message.includes('access denied')) {
+      console.error(
+        `Fabric discovery for channel '${CHANNEL_NAME}' was denied. Verify that '${IDENTITY_NAME}' belongs to the current Org1 network and that '${CHANNEL_NAME}' exists on the running peers.`
+      );
+    }
     throw error;
   }
 }
@@ -106,6 +221,14 @@ async function connectToGateway(): Promise<{ contract: Contract; gateway: Gatewa
  * @returns The result from the chaincode, typically a stringified object.
  */
 async function submitTransaction(functionName: string, ...args: string[]): Promise<string> {
+  if (!USE_FABRIC) {
+    const txId = createMockTransactionId(functionName);
+    console.log(
+      `[fabric disabled] Skipping submitTransaction('${functionName}') with args: ${args.join(', ')}. Generated txId: ${txId}`
+    );
+    return txId;
+  }
+
   let gateway: Gateway | undefined;
   try {
     // Connect and get the contract
@@ -140,6 +263,18 @@ async function submitTransaction(functionName: string, ...args: string[]): Promi
  * @returns The result from the chaincode, typically a stringified JSON object.
  */
 async function evaluateTransaction(functionName: string, ...args: string[]): Promise<string> {
+  if (!USE_FABRIC) {
+    console.log(
+      `[fabric disabled] Skipping evaluateTransaction('${functionName}') with args: ${args.join(', ')}.`
+    );
+    return JSON.stringify({
+      mode: 'database-only',
+      fabricEnabled: false,
+      functionName,
+      args,
+    });
+  }
+
   let gateway: Gateway | undefined;
   try {
     // Connect and get the contract

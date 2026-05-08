@@ -1,8 +1,19 @@
 import axios from 'axios';
 
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
+
+export function resolveApiUrl(path: string): string {
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return API_BASE_URL ? `${API_BASE_URL}${normalizedPath}` : normalizedPath;
+}
+
 // 1. Create a re-usable 'api' client
 export const api = axios.create({
-  baseURL: '/api', // All requests will be prefixed with /api
+  baseURL: resolveApiUrl('/api'), // All requests will be prefixed with /api
 });
 
 // 2. This is the "interceptor"
@@ -32,6 +43,8 @@ api.interceptors.response.use(
     return Promise.reject(new Error(message));
   }
 );
+
+
 
 // 4. Keep your multipart header function for file uploads
 export function getMultipartAuthHeaders(): HeadersInit {

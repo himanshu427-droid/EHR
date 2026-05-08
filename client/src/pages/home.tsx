@@ -51,7 +51,7 @@ export default function HomePage() {
                         <div className="flex items-center space-x-4">
                             {isAuthenticated ? (
                                 <>
-                                    <span className="text-sm text-gray-700">Welcome, {user?.name}</span>
+                                    <span className="text-sm text-gray-700">Welcome, {user?.fullName ?? user?.username}</span>
                                     <Link href="/dashboard">
                                         <Button>Go to Dashboard</Button>
                                     </Link>

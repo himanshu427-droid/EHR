@@ -10,15 +10,15 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileText, Search, AlertCircle, Shield, Calendar, ClipboardList } from 'lucide-react'; // Added ClipboardList
-import { Link, useLocation } from 'wouter'; // Import useLocation
+import { FileText, Search, AlertCircle, Shield } from 'lucide-react';
+import { Link } from 'wouter';
 import { api } from '@/lib/api';
 import type { Record as PatientRecord } from '@shared/schema';
-import { Select } from '@/components/ui/select';
 
 // Helper to format record type
 const formatRecordType = (type?: string | null) => {
@@ -28,8 +28,6 @@ const formatRecordType = (type?: string | null) => {
 
 export default function DoctorRecordsPage() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [location] = useLocation(); // Get location to read query params
-
   // --- Read filter type from URL query parameter ---
   const queryParams = new URLSearchParams(window.location.search);
   const filterType = queryParams.get('type') || null; // Get 'prescription' or null
@@ -95,9 +93,6 @@ export default function DoctorRecordsPage() {
             />
           </div>
            {/* Optional: Add dropdown to filter by type if filterType is not in URL */}
-           {!filterType && (
-              <Select /* ... control to select recordType filter ... */ />
-           )}
         </div>
 
         {/* Records List/Table */}
@@ -172,7 +167,11 @@ export default function DoctorRecordsPage() {
                          </Badge>
                        </TableCell>
                        <TableCell>
-                          {record.blockchainTxId ? ( <Shield className="w-4 h-4 text-green-600" title="Verified"/> ) : ( <Shield className="w-4 h-4 text-muted-foreground/50" title="Not Verified"/> )}
+                          {record.blockchainTxId ? (
+                            <Shield className="w-4 h-4 text-green-600" aria-label="Verified" />
+                          ) : (
+                            <Shield className="w-4 h-4 text-muted-foreground/50" aria-label="Not Verified" />
+                          )}
                        </TableCell>
                       {/* <TableCell className="text-right">
                         <Button variant="ghost" size="sm">View</Button>

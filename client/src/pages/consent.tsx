@@ -61,7 +61,8 @@ export default function ConsentPage() {
 
   // --- QUERY FOR GRANTED ACCESS ---
   // Assuming a similar structure for granted access, define an interface
-   interface GrantedAccess extends AccessControl { // Extend base AccessControl
+   interface GrantedAccess extends Omit<AccessControl, 'permissions'> { // Extend base AccessControl
+       permissions: string[];
        entity: {
            id: string;
            fullName: string;
@@ -349,4 +350,3 @@ export default function ConsentPage() {
     </DashboardLayout>
   );
 }
-

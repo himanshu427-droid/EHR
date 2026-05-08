@@ -9,6 +9,9 @@ interface DecodedToken {
   email: string;
   role: UserRoleType;
   fullName: string;
+  speciality?: string | null;
+  organization?: string | null;
+  licenseNumber?: string | null;
   exp: number;
 }
 

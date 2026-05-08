@@ -29,6 +29,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { resolveApiUrl } from '@/lib/api';
 import { Shield } from 'lucide-react';
 
 export default function Register() {
@@ -54,7 +55,7 @@ export default function Register() {
   async function onSubmit(data: RegisterRequest) {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch(resolveApiUrl('/api/auth/register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -222,6 +223,7 @@ export default function Register() {
                           placeholder="e.g., Cardiology, Neurology"
                           data-testid="input-specialty"
                           {...field}
+                          value={field.value ?? ''}
                         />
                       </FormControl>
                       <FormMessage />
@@ -245,6 +247,7 @@ export default function Register() {
                           placeholder="Organization name"
                           data-testid="input-organization"
                           {...field}
+                          value={field.value ?? ''}
                         />
                       </FormControl>
                       <FormMessage />
@@ -265,6 +268,7 @@ export default function Register() {
                           placeholder="Professional license number"
                           data-testid="input-license"
                           {...field}
+                          value={field.value ?? ''}
                         />
                       </FormControl>
                       <FormMessage />

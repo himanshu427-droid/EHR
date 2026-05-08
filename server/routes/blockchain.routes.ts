@@ -21,6 +21,12 @@ const requireRole = (role: string | string[]) => {
 
 const router = Router();
 
+router.get('/status', authenticateToken, async (_req: AuthRequest, res) => {
+  res.json({
+    enabled: process.env.USE_FABRIC?.trim().toLowerCase() === 'true',
+  });
+});
+
  router.get(
     '/audit',
     authenticateToken,

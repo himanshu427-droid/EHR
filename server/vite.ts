@@ -1,17 +1,15 @@
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
 // Assuming vite.config.ts is in the project root, one level up from this file
 import viteConfig from "../vite.config";
-import { nanoid } from "nanoid";
 
 const viteLogger = createLogger();
 
-// Get the directory name of the current module (works in ESM)
-// If using CommonJS, use __dirname instead of import.meta.dirname
-const currentDir = path.dirname(new URL(import.meta.url).pathname.substring(1)); // Adjust if running on Windows
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {

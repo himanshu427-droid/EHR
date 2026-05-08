@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
-import { getMultipartAuthHeaders } from '@/lib/api';
+import { getMultipartAuthHeaders, resolveApiUrl } from '@/lib/api';
 import { ArrowLeft, Plus, X, Loader2, Search, UserCheck, CheckCircle2 } from 'lucide-react';
 import type { Record as PatientRecord, User } from '@shared/schema';
 import { debounce } from 'lodash-es';
@@ -120,7 +120,7 @@ export default function CreateRecordPage() {
    // --- Record Creation Mutation ---
    const createRecordMutation = useMutation<PatientRecord, Error, FormData>({
      mutationFn: async (formDataPayload) => {
-       const response = await fetch('/api/records/upload', { // Use fetch for FormData
+       const response = await fetch(resolveApiUrl('/api/records/upload'), { // Use fetch for FormData
            method: 'POST',
            headers: getMultipartAuthHeaders(), // Use specific headers for multipart
            body: formDataPayload,

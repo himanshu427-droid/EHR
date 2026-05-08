@@ -29,6 +29,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { resolveApiUrl } from '@/lib/api';
 import { Shield } from 'lucide-react';
 
 export default function Register() {
@@ -54,7 +55,7 @@ export default function Register() {
   async function onSubmit(data: RegisterRequest) {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch(resolveApiUrl('/api/auth/register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),

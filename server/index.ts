@@ -59,8 +59,18 @@ app.use((req, res, next) => {
 
   if (app.get("env") === "development") {
     await setupVite(app, server);
-  } else {
+  } else if (process.env.SERVE_FRONTEND !== 'false') {
     serveStatic(app);
+  } else {
+    app.use("*", (req, res) => {
+      if (req.originalUrl.startsWith('/api')) {
+        return res.status(404).json({ message: 'API endpoint not found' });
+      }
+
+      return res.status(404).json({
+        message: 'Frontend is deployed separately for this environment.',
+      });
+    });
   }
 
   const port = parseInt(process.env.PORT || '5000', 10);

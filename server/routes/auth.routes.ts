@@ -8,6 +8,7 @@ import {
   generateToken,
   type AuthRequest,
 } from '../middleware/auth';
+import { createRateLimiter } from '../middleware/rate-limit';
 import { loginSchema, registerSchema } from '../../shared/schema';
 
 const userIdParamSchema = z.object({
@@ -16,7 +17,19 @@ const userIdParamSchema = z.object({
 
 const router = Router();
 
- router.post('/register', async (req, res) => {
+const loginRateLimiter = createRateLimiter({
+  windowMs: 5 * 60 * 1000,
+  max: 10,
+  message: 'Too many login attempts. Please try again later.',
+});
+
+const registerRateLimiter = createRateLimiter({
+  windowMs: 5 * 60 * 1000,
+  max: 10,
+  message: 'Too many signup attempts. Please try again later.',
+});
+
+router.post('/register', registerRateLimiter, async (req, res) => {
     try {
       const validatedData = registerSchema.parse(req.body);
       const existingUser = await storage.getUserByUsername(
@@ -58,7 +71,7 @@ const router = Router();
     }
   });
 
-  router.post('/login', async (req, res) => {
+router.post('/login', loginRateLimiter, async (req, res) => {
     try {
       const validatedData = loginSchema.parse(req.body);
       const user = await storage.getUserByUsername(validatedData.username);
